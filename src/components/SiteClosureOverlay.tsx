@@ -7,8 +7,20 @@ import { getSupabase } from '@/lib/supabase';
 import { SiteStatusSettings } from '@/lib/types';
 import { Heart, Lock, Shield } from 'lucide-react';
 
-export default function SiteClosureOverlay() {
-  const [siteStatus, setSiteStatus] = useState<SiteStatusSettings | null>(null);
+interface SiteClosureOverlayProps {
+  siteStatusProp?: SiteStatusSettings | null;
+}
+
+export default function SiteClosureOverlay({ siteStatusProp }: SiteClosureOverlayProps = {}) {
+  const [siteStatus, setSiteStatus] = useState<SiteStatusSettings | null>(
+    siteStatusProp || null
+  );
+
+  useEffect(() => {
+    if (siteStatusProp) {
+      setSiteStatus(siteStatusProp);
+    }
+  }, [siteStatusProp]);
 
   const fetchStatus = async () => {
     try {

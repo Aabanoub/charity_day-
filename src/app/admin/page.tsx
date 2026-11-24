@@ -203,6 +203,8 @@ export default function AdminPage() {
   const handleUpdateSiteSettings = async (updated: SiteStatusSettings) => {
     setIsSavingSettings(true);
     setSettingsSuccess(false);
+    // Optimistic update so admin button & status update instantly
+    setSiteSettings(updated);
     try {
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
@@ -229,10 +231,13 @@ export default function AdminPage() {
   };
 
   const handleToggleSiteClosure = async () => {
+    const nextClosed = !siteSettings.isClosed;
     await handleUpdateSiteSettings({
-      isClosed: !siteSettings.isClosed,
-      title: closureTitleInput,
-      message: closureMsgInput,
+      isClosed: nextClosed,
+      title: closureTitleInput.trim() || 'Charity Day Has Concluded',
+      message:
+        closureMsgInput.trim() ||
+        'Thank you for your incredible support! Price submissions are currently closed while organizers review the results.',
     });
   };
 

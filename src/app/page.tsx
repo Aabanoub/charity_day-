@@ -9,7 +9,7 @@ import ThankYouScreen from '@/components/ThankYouScreen';
 import AnnouncementPopup from '@/components/AnnouncementPopup';
 import SiteClosureOverlay from '@/components/SiteClosureOverlay';
 import SkeletonCard from '@/components/SkeletonCard';
-import { Item, PriceSubmission, UserProfile } from '@/lib/types';
+import { Item, PriceSubmission, UserProfile, SiteStatusSettings } from '@/lib/types';
 import { getSupabase } from '@/lib/supabase';
 import { Heart, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 
@@ -22,6 +22,54 @@ export default function HomePage() {
   const [isLoadingItems, setIsLoadingItems] = useState<boolean>(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [showThankYouBanner, setShowThankYouBanner] = useState<boolean>(true);
+  const [siteStatus, setSiteStatus] = useState<SiteStatusSettings | null>(null);
+
+  // Check and sync site closure status in real-time
+  const checkSiteStatus = async () => {
+    try {
+      const res = await fetch('/api/settings', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.settings) {
+          setSiteStatus(data.settings);
+        }
+      }
+    } catch (err) {
+      console.warn('Could not check site status:', err);
+    }
+  };
+
+  useEffect(() => {
+    checkSiteStatus();
+
+    const supabase = getSupabase();
+    let channel: any = null;
+
+    if (supabase) {
+      channel = supabase
+        .channel('mtd_realtime_page_site_status')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'mtd_settings' },
+          (payload: any) => {
+            if (payload.new && payload.new.key === 'site_status' && payload.new.value) {
+              setSiteStatus(payload.new.value as SiteStatusSettings);
+            } else {
+              checkSiteStatus();
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    const interval = setInterval(checkSiteStatus, 3000);
+    return () => {
+      clearInterval(interval);
+      if (channel && supabase) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, []);
 
   // 1. Initial Device Check: Read survey profile from localStorage
   useEffect(() => {
@@ -178,12 +226,19 @@ export default function HomePage() {
   const totalCount = items.length;
   const isFinishedAll = totalCount > 0 && completedCount >= totalCount;
 
-  // STRICT RULE: "No item is visible before the survey is completed."
+  // 1. ABSOLUTE TOP PRIORITY: If the website is closed by the admin, block everything!
+  if (siteStatus?.isClosed) {
+    return (
+      <main className="min-h-screen bg-brand-black flex flex-col justify-center items-center p-4">
+        <SiteClosureOverlay siteStatusProp={siteStatus} />
+      </main>
+    );
+  }
+
+  // 2. STRICT RULE: "No item is visible before the survey is completed."
   if (isSurveyGated || !userProfile) {
     return (
       <main className="min-h-screen bg-brand-black flex flex-col justify-center items-center p-4">
-        {/* Site Closure Overlay if Event Closed */}
-        <SiteClosureOverlay />
         <SurveyModal
           isOpen={true}
           initialProfile={userProfile}
@@ -195,9 +250,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-brand-black text-white flex flex-col">
-      {/* Site Closure Overlay if Event Closed */}
-      <SiteClosureOverlay />
-
       {/* Realtime Admin Broadcast Popups */}
       <AnnouncementPopup />
 
