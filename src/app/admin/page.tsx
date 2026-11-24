@@ -701,7 +701,7 @@ export default function AdminPage() {
             <div className="space-y-4">
               {filteredItems.length === 0 ? (
                 <div className="text-center py-12 border border-[#123A66] rounded-[16px] bg-[#0b1d33]/40 text-gray-400 text-xs">
-                  No items match the current search or class filter.
+                  {searchQuery.trim() ? 'No items match your search.' : 'No items added to the catalogue yet.'}
                 </div>
               ) : (
                 filteredItems.map((item) => {
@@ -907,7 +907,7 @@ export default function AdminPage() {
                       <h4 className="font-medium text-white text-sm truncate">{item.name}</h4>
                       <p className="text-xs text-[#A9C8EE]/80 mt-0.5 line-clamp-1">{item.description || 'No description'}</p>
                       <span className="text-[10px] text-gray-400 mt-1 block">
-                        {item.pricesCount} prices submitted
+                        {item.pricesCount} price{item.pricesCount === 1 ? '' : 's'} submitted
                       </span>
                     </div>
                   </div>

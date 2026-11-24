@@ -77,46 +77,46 @@ export default function AdminReportModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/90 backdrop-blur-md overflow-y-auto animate-fadeIn print-modal-container">
       <div className="relative w-full max-w-4xl bg-[#0b1d33] border border-[#123A66] rounded-[16px] overflow-hidden shadow-2xl flex flex-col max-h-[92vh] print-sheet my-auto">
         {/* On-Screen Controls Header (Hidden during print / export) */}
-        <div className="no-print p-4 bg-[#071526] border-b border-[#123A66] flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-[#B22026]" />
-            <div>
-              <h3 className="text-sm font-medium text-white">Market Price Research Sheet (PDF)</h3>
-              <p className="text-[11px] text-[#A9C8EE]">
+        <div className="no-print p-3 sm:p-4 bg-[#071526] border-b border-[#123A66] flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <FileText className="w-5 h-5 text-[#B22026] shrink-0" />
+            <div className="min-w-0">
+              <h3 className="text-sm font-medium text-white truncate">Market Price Research Sheet (PDF)</h3>
+              <p className="text-[11px] text-[#A9C8EE] hidden sm:block">
                 Contains all submitted prices, contributor contact info & store details.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
             {/* View Mode Toggle */}
-            <div className="flex rounded-lg bg-[#123A66]/40 p-0.5 border border-[#123A66] text-xs">
+            <div className="flex rounded-lg bg-[#123A66]/40 p-0.5 border border-[#123A66] text-xs shrink-0">
               <button
                 type="button"
                 onClick={() => setViewMode('both')}
-                className={`px-2.5 py-1 rounded-md transition-colors ${
+                className={`px-2 py-1 rounded-md transition-colors ${
                   viewMode === 'both' ? 'bg-[#123A66] text-white font-medium' : 'text-[#A9C8EE]'
                 }`}
               >
-                Complete Report
+                Complete
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('detailed')}
-                className={`px-2.5 py-1 rounded-md transition-colors ${
+                className={`px-2 py-1 rounded-md transition-colors ${
                   viewMode === 'detailed' ? 'bg-[#123A66] text-white font-medium' : 'text-[#A9C8EE]'
                 }`}
               >
-                All Prices Ledger
+                Ledger
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode('summary')}
-                className={`px-2.5 py-1 rounded-md transition-colors ${
+                className={`px-2 py-1 rounded-md transition-colors ${
                   viewMode === 'summary' ? 'bg-[#123A66] text-white font-medium' : 'text-[#A9C8EE]'
                 }`}
               >
-                Lowest Summary
+                Lowest
               </button>
             </div>
 
@@ -125,28 +125,28 @@ export default function AdminReportModal({
               type="button"
               onClick={handleDownloadPdf}
               disabled={isDownloadingPdf}
-              className="px-4 py-1.5 bg-[#B22026] hover:bg-[#c9252c] text-white text-xs font-medium rounded-lg flex items-center gap-1.5 shadow transition-all duration-200 tap-active disabled:opacity-50"
+              className="px-3.5 py-1.5 bg-[#B22026] hover:bg-[#c9252c] text-white text-xs font-medium rounded-lg flex items-center gap-1.5 shadow transition-all duration-200 tap-active disabled:opacity-50 shrink-0"
             >
               <Download className="w-4 h-4" />
-              <span>{isDownloadingPdf ? 'Generating PDF...' : 'Download PDF (.pdf)'}</span>
+              <span>{isDownloadingPdf ? 'Generating...' : 'Download PDF'}</span>
             </button>
 
             {/* Browser Print Button */}
             <button
               type="button"
               onClick={handlePrint}
-              className="px-3 py-1.5 bg-[#123A66] hover:bg-[#18497d] text-white text-xs font-medium rounded-lg flex items-center gap-1.5 shadow transition-all duration-200 tap-active"
+              className="px-2.5 py-1.5 bg-[#123A66] hover:bg-[#18497d] text-white text-xs font-medium rounded-lg flex items-center gap-1 shadow transition-all duration-200 tap-active shrink-0"
               title="Print document or save using browser dialog"
             >
               <Printer className="w-4 h-4" />
-              <span>Print</span>
+              <span className="hidden sm:inline">Print</span>
             </button>
 
             {/* Close Button */}
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 shrink-0"
               title="Close modal"
             >
               <X className="w-5 h-5" />
