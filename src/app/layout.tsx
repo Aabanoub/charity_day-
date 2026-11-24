@@ -10,8 +10,30 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://charityday-2026.vercel.app'),
   title: 'Make Their Day | Charity Day',
-  description: 'Mobile-first price collection platform for Make Their Day charity initiative.',
+  description: 'NRC',
+  openGraph: {
+    title: 'Make Their Day | Charity Day',
+    description: 'NRC',
+    url: 'https://charityday-2026.vercel.app',
+    siteName: 'Make Their Day',
+    images: [
+      {
+        url: '/logo.png',
+        width: 667,
+        height: 667,
+        alt: 'Make Their Day Logo',
+      },
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Make Their Day | Charity Day',
+    description: 'NRC',
+    images: ['/logo.png'],
+  },
   icons: {
     icon: '/icon.svg',
     shortcut: '/icon.svg',
