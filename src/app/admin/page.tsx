@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Logo from '@/components/Logo';
+import AdminReportModal from '@/components/AdminReportModal';
 import { AdminItemSummary, AdminMessage, SiteStatusSettings } from '@/lib/types';
 import { CLASS_OPTIONS } from '@/lib/constants';
 import {
@@ -35,6 +36,7 @@ import {
   RefreshCw,
   Power,
   Radio,
+  FileText,
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -68,6 +70,7 @@ export default function AdminPage() {
   );
   const [isSavingSettings, setIsSavingSettings] = useState<boolean>(false);
   const [settingsSuccess, setSettingsSuccess] = useState<boolean>(false);
+  const [reportModalOpen, setReportModalOpen] = useState<boolean>(false);
 
   // Item Modal (Add / Edit)
   const [itemModalOpen, setItemModalOpen] = useState<boolean>(false);
@@ -691,6 +694,16 @@ export default function AdminPage() {
                   <Download className="w-3.5 h-3.5" />
                   <span>Export CSV</span>
                 </a>
+
+                {/* PDF Sheet Report Button */}
+                <button
+                  type="button"
+                  onClick={() => setReportModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-[#123A66] hover:bg-[#18497d] border border-[#A9C8EE]/40 text-white text-xs font-medium rounded-[10px] transition-colors duration-200 tap-active shadow-md shrink-0"
+                >
+                  <FileText className="w-3.5 h-3.5 text-[#A9C8EE]" />
+                  <span>PDF Sheet</span>
+                </button>
               </div>
             </div>
 
@@ -1404,6 +1417,15 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      {/* =============================================================== */}
+      {/* MODAL: EXECUTIVE PDF REPORT SHEET */}
+      {/* =============================================================== */}
+      <AdminReportModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        items={items}
+      />
     </div>
   );
 }

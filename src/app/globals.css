@@ -70,3 +70,83 @@ body {
 .tap-active:active {
   transform: scale(0.98);
 }
+
+
+/* Print Styles for PDF Report Export */
+@media print {
+  @page {
+    margin: 10mm 12mm;
+    size: portrait;
+  }
+
+  html,
+  body {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    overflow: visible !important;
+  }
+
+  /* Hide regular UI elements */
+  .no-print,
+  header,
+  footer,
+  nav,
+  button:not(.print-include) {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  /* Ensure modal fills the page cleanly during print */
+  .print-modal-container {
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .print-sheet {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .print-sheet * {
+    color: #111827 !important;
+    border-color: #e5e7eb !important;
+  }
+
+  .print-sheet .print-brand-red {
+    color: #B22026 !important;
+  }
+
+  .print-sheet .print-brand-navy {
+    color: #123A66 !important;
+  }
+
+  .print-sheet .print-bg-header {
+    background-color: #f3f4f6 !important;
+  }
+
+  .print-sheet .print-bg-highlight {
+    background-color: #fef2f2 !important;
+  }
+
+  .print-break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+
+.print-only {
+  display: none;
+}
