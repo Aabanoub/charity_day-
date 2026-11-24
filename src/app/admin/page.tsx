@@ -454,7 +454,7 @@ export default function AdminPage() {
 
           {/* Logo in Admin Login */}
           <div className="flex flex-col items-center text-center mb-6">
-            <Logo size="lg" showText={false} />
+            <Logo size="lg" showText={false} variant="badge" />
             <h1 className="text-xl font-medium tracking-tight text-white mt-4">
               Admin Portal
             </h1>

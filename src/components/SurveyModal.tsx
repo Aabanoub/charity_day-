@@ -107,7 +107,7 @@ export default function SurveyModal({ onComplete, initialProfile, isOpen }: Surv
 
         {/* Logo at the top of Survey Pop-up */}
         <div className="flex flex-col items-center text-center mb-6">
-          <Logo size="lg" showText={false} />
+          <Logo size="lg" showText={false} variant="badge" />
           <h1 className="text-2xl font-medium tracking-tight text-white mt-4 flex items-center gap-2">
             Make Their <span className="text-[#B22026]">Day</span>
           </h1>

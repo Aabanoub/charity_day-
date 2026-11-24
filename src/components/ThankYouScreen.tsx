@@ -50,7 +50,7 @@ export default function ThankYouScreen({
         {/* Heart handshake logo */}
         <div className="flex justify-center mb-4">
           <div className="relative">
-            <Logo size="xl" showText={false} />
+            <Logo size="xl" showText={false} variant="badge" />
             <div className="absolute -top-1 -right-1 p-1 bg-[#B22026] rounded-full text-white">
               <Sparkles className="w-4 h-4 animate-spin" />
             </div>

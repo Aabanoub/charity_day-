@@ -162,7 +162,7 @@ export default function AdminReportModal({
           {/* Printable Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b-2 border-gray-900 print-break-inside-avoid">
             <div className="flex items-center gap-3">
-              <Logo size="lg" showText={false} />
+              <Logo size="lg" showText={false} variant="badge" />
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-gray-900 leading-tight">
                   MAKE THEIR <span className="text-[#B22026]">DAY</span>

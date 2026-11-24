@@ -94,7 +94,7 @@ export default function SiteClosureOverlay({ siteStatusProp }: SiteClosureOverla
 
         {/* Heart-Shaped Handshake Logo */}
         <div className="flex justify-center mb-5">
-          <Logo size="xl" showText={false} />
+          <Logo size="xl" showText={false} variant="badge" />
         </div>
 
         {/* Status Pill */}
