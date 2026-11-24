@@ -171,10 +171,14 @@ export default function SurveyModal({ onComplete, initialProfile, isOpen }: Surv
                 } rounded-[12px] text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-[#A9C8EE] transition-all duration-200`}
               />
             </div>
-            {phoneError && (
+            {phoneError ? (
               <p className="flex items-center gap-1 text-[#B22026] text-xs mt-1.5">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 {phoneError}
+              </p>
+            ) : (
+              <p className="text-[11px] text-[#A9C8EE]/70 mt-1">
+                Required for the organizer to contact you.
               </p>
             )}
           </div>
