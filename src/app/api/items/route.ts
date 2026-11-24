@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server';
 import { getServerSupabase, inMemoryStore } from '@/lib/server-supabase';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+  'CDN-Cache-Control': 'no-store',
+  'Vercel-CDN-Cache-Control': 'no-store',
+};
 
 export async function GET() {
   try {
@@ -16,14 +23,13 @@ export async function GET() {
 
       if (error) {
         console.error('Error fetching items from Supabase:', error);
-        // Fall back to in-memory items
-        return NextResponse.json({
-          items: inMemoryStore.items.filter((i) => i.active !== false),
-        });
+        return NextResponse.json(
+          { items: inMemoryStore.items.filter((i) => i.active !== false) },
+          { headers: NO_CACHE_HEADERS }
+        );
       }
 
-      // Format keys for client
-      const items = data.map((item) => ({
+      const items = (data || []).map((item) => ({
         id: item.id,
         name: item.name,
         photoUrl: item.photo_url,
@@ -31,18 +37,18 @@ export async function GET() {
         orderIndex: item.order_index,
       }));
 
-      return NextResponse.json({ items });
+      return NextResponse.json({ items }, { headers: NO_CACHE_HEADERS });
     }
 
-    // Supabase not yet configured, serve from in-memory store
-    return NextResponse.json({
-      items: inMemoryStore.items.filter((i) => i.active !== false),
-    });
+    return NextResponse.json(
+      { items: inMemoryStore.items.filter((i) => i.active !== false) },
+      { headers: NO_CACHE_HEADERS }
+    );
   } catch (error) {
     console.error('API /api/items error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch items', items: inMemoryStore.items },
-      { status: 500 }
+      { status: 500, headers: NO_CACHE_HEADERS }
     );
   }
 }

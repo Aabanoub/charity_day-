@@ -3,6 +3,13 @@ import { getServerSupabase, inMemoryStore } from '@/lib/server-supabase';
 import { PriceSubmission } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+  'CDN-Cache-Control': 'no-store',
+  'Vercel-CDN-Cache-Control': 'no-store',
+};
 
 export async function GET(request: Request) {
   try {
@@ -12,7 +19,7 @@ export async function GET(request: Request) {
     if (!userId) {
       return NextResponse.json(
         { error: 'userId is required' },
-        { status: 400 }
+        { status: 400, headers: NO_CACHE_HEADERS }
       );
     }
 
@@ -36,7 +43,7 @@ export async function GET(request: Request) {
           createdAt: sub.created_at,
           updatedAt: sub.updated_at,
         }));
-        return NextResponse.json({ submissions });
+        return NextResponse.json({ submissions }, { headers: NO_CACHE_HEADERS });
       }
     }
 
@@ -48,10 +55,13 @@ export async function GET(request: Request) {
       }
     });
 
-    return NextResponse.json({ submissions: userSubs });
+    return NextResponse.json({ submissions: userSubs }, { headers: NO_CACHE_HEADERS });
   } catch (error) {
     console.error('API /api/submissions GET error:', error);
-    return NextResponse.json({ error: 'Failed to fetch submissions' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch submissions' },
+      { status: 500, headers: NO_CACHE_HEADERS }
+    );
   }
 }
 

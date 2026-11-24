@@ -178,3 +178,22 @@ BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE mtd_settings;
   END IF;
 END $$;
+
+
+-- 12. Add mtd_items and mtd_submissions to Realtime publication
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND tablename = 'mtd_items'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE mtd_items;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND tablename = 'mtd_submissions'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE mtd_submissions;
+  END IF;
+END $$;

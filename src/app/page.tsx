@@ -10,6 +10,7 @@ import AnnouncementPopup from '@/components/AnnouncementPopup';
 import SiteClosureOverlay from '@/components/SiteClosureOverlay';
 import SkeletonCard from '@/components/SkeletonCard';
 import { Item, PriceSubmission, UserProfile } from '@/lib/types';
+import { getSupabase } from '@/lib/supabase';
 import { Heart, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function HomePage() {
@@ -52,7 +53,7 @@ export default function HomePage() {
     setIsLoadingItems(true);
     setFetchError(null);
     try {
-      const res = await fetch('/api/items');
+      const res = await fetch('/api/items', { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to load charity items');
       const data = await res.json();
       setItems(data.items || []);
@@ -67,7 +68,7 @@ export default function HomePage() {
   // 3. Fetch user's own submissions
   const loadUserSubmissions = async (userId: string) => {
     try {
-      const res = await fetch(`/api/submissions?userId=${encodeURIComponent(userId)}`);
+      const res = await fetch(`/api/submissions?userId=${encodeURIComponent(userId)}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         const map = new Map<string, PriceSubmission>();
@@ -86,6 +87,46 @@ export default function HomePage() {
       loadItems();
       loadUserSubmissions(userProfile.id);
     }
+  }, [userProfile, isSurveyGated]);
+
+  // Realtime subscription for live item catalog updates from database
+  useEffect(() => {
+    if (!userProfile || isSurveyGated) return;
+
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const channel = supabase
+      .channel('mtd_realtime_items_sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'mtd_items' },
+        () => {
+          loadItems();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userProfile, isSurveyGated]);
+
+  // Window Focus & Daily Resume Sync
+  useEffect(() => {
+    const handleSyncOnResume = () => {
+      if (document.visibilityState === 'visible' && userProfile && !isSurveyGated) {
+        loadItems();
+        loadUserSubmissions(userProfile.id);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleSyncOnResume);
+    window.addEventListener('focus', handleSyncOnResume);
+    return () => {
+      document.removeEventListener('visibilitychange', handleSyncOnResume);
+      window.removeEventListener('focus', handleSyncOnResume);
+    };
   }, [userProfile, isSurveyGated]);
 
   // Handle survey completion
