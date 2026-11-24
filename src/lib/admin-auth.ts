@@ -29,6 +29,15 @@ export function isAuthorizedAdmin(request: Request): boolean {
     return true;
   }
 
+  // Check Authorization: Bearer token
+  const bearerHeader = request.headers.get('authorization');
+  if (bearerHeader && bearerHeader.startsWith('Bearer ')) {
+    const bearerToken = bearerHeader.slice(7).trim();
+    if (verifyAdminToken(bearerToken)) {
+      return true;
+    }
+  }
+
   // Check cookie
   try {
     const cookieStore = cookies();
