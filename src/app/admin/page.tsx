@@ -28,6 +28,11 @@ import {
   ArrowLeft,
   X,
   ExternalLink,
+  UploadCloud,
+  ImageIcon,
+  Camera,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -56,6 +61,63 @@ export default function AdminPage() {
   const [formDescription, setFormDescription] = useState<string>('');
   const [formActive, setFormActive] = useState<boolean>(true);
   const [isSavingItem, setIsSavingItem] = useState<boolean>(false);
+
+  // Direct Image Upload States
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showUrlFallback, setShowUrlFallback] = useState<boolean>(false);
+
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Please select a valid image file (PNG, JPG, WEBP, etc.)');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('Image size exceeds 10MB limit');
+      return;
+    }
+
+    setUploadError(null);
+    setIsUploadingImage(true);
+
+    // Fast local preview immediately
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setFormPhotoUrl(event.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        headers: { 'x-admin-token': adminToken },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setFormPhotoUrl(data.url);
+      } else {
+        console.warn('Upload API note:', data.error);
+      }
+    } catch (err: any) {
+      console.warn('Network upload note, using data URL preview:', err);
+    } finally {
+      setIsUploadingImage(false);
+      // Reset input value so re-selecting same file triggers onChange
+      if (e.target) e.target.value = '';
+    }
+  };
 
   // Delete Confirmation Modal
   const [itemToDelete, setItemToDelete] = useState<AdminItemSummary | null>(null);
@@ -157,6 +219,8 @@ export default function AdminPage() {
     setFormPhotoUrl('');
     setFormDescription('');
     setFormActive(true);
+    setUploadError(null);
+    setShowUrlFallback(false);
     setItemModalOpen(true);
   };
 
@@ -167,13 +231,23 @@ export default function AdminPage() {
     setFormPhotoUrl(item.photoUrl);
     setFormDescription(item.description || '');
     setFormActive(item.active);
+    setUploadError(null);
+    setShowUrlFallback(false);
     setItemModalOpen(true);
   };
 
   // Save Item (Add or Edit)
   const handleSaveItem = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName.trim() || !formPhotoUrl.trim()) return;
+    if (!formName.trim()) {
+      alert('Please enter an item name');
+      return;
+    }
+
+    if (!formPhotoUrl.trim()) {
+      setUploadError('Please choose or upload a photo for the item');
+      return;
+    }
 
     setIsSavingItem(true);
     try {
@@ -903,21 +977,116 @@ export default function AdminPage() {
                 />
               </div>
 
+              {/* Image Upload Section */}
               <div>
-                <label className="block text-xs font-medium text-gray-200 mb-1">
-                  Photo URL <span className="text-[#B22026]">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-medium text-gray-200">
+                    Item Photo <span className="text-[#B22026]">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowUrlFallback(!showUrlFallback)}
+                    className="text-[11px] text-[#A9C8EE] hover:underline"
+                  >
+                    {showUrlFallback ? '← Upload photo from device' : 'Or paste image link'}
+                  </button>
+                </div>
+
+                {/* Hidden File Input */}
                 <input
-                  type="url"
-                  required
-                  value={formPhotoUrl}
-                  onChange={(e) => setFormPhotoUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full px-3.5 py-2.5 bg-[#123A66]/30 border border-[#123A66] focus:border-[#A9C8EE] rounded-[12px] text-white text-xs placeholder-gray-500 focus:outline-none"
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  onChange={handleImageFileChange}
+                  className="hidden"
                 />
-                {formPhotoUrl && (
-                  <div className="mt-2 w-20 h-20 rounded-[10px] overflow-hidden border border-[#123A66] bg-black">
-                    <img src={formPhotoUrl} alt="Preview" className="w-full h-full object-cover" />
+
+                {!showUrlFallback ? (
+                  <div>
+                    {formPhotoUrl ? (
+                      /* Image Preview with Change / Remove controls */
+                      <div className="relative border border-[#123A66] rounded-[12px] bg-[#071526] p-3 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-16 h-16 rounded-[10px] overflow-hidden bg-black border border-[#123A66] shrink-0">
+                            <img src={formPhotoUrl} alt="Preview" className="w-full h-full object-cover" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-medium text-white block truncate">Photo selected</span>
+                            <span className="text-[11px] text-green-400 flex items-center gap-1 mt-0.5">
+                              <CheckCircle2 className="w-3 h-3" /> Ready
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="px-2.5 py-1.5 rounded-[8px] bg-[#123A66] hover:bg-[#18497d] text-white text-xs font-medium transition-colors"
+                          >
+                            Change
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormPhotoUrl('')}
+                            className="p-1.5 rounded-[8px] hover:bg-[#B22026]/20 text-gray-400 hover:text-[#B22026] transition-colors"
+                            title="Remove Photo"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Drag & Drop / Click Upload Box */
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="group cursor-pointer border-2 border-dashed border-[#123A66] hover:border-[#A9C8EE]/60 rounded-[12px] p-5 text-center bg-[#123A66]/15 hover:bg-[#123A66]/25 transition-all duration-200"
+                      >
+                        {isUploadingImage ? (
+                          <div className="flex flex-col items-center justify-center py-2 space-y-2">
+                            <Loader2 className="w-7 h-7 text-[#A9C8EE] animate-spin" />
+                            <span className="text-xs text-[#A9C8EE]">Processing image...</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-2 space-y-2">
+                            <div className="w-12 h-12 rounded-full bg-[#123A66]/50 flex items-center justify-center text-[#A9C8EE] group-hover:scale-110 transition-transform duration-200">
+                              <UploadCloud className="w-6 h-6" />
+                            </div>
+                            <div className="space-y-0.5">
+                              <span className="text-xs font-medium text-white block">
+                                Click or tap to upload photo
+                              </span>
+                              <span className="text-[11px] text-[#A9C8EE]/70 block">
+                                PNG, JPG, WEBP, HEIC from device (up to 10MB)
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {uploadError && (
+                      <p className="flex items-center gap-1 text-[#B22026] text-xs mt-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        {uploadError}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  /* URL Fallback Input */
+                  <div>
+                    <input
+                      type="url"
+                      value={formPhotoUrl}
+                      onChange={(e) => setFormPhotoUrl(e.target.value)}
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full px-3.5 py-2.5 bg-[#123A66]/30 border border-[#123A66] focus:border-[#A9C8EE] rounded-[12px] text-white text-xs placeholder-gray-500 focus:outline-none"
+                    />
+                    {formPhotoUrl && (
+                      <div className="mt-2 w-16 h-16 rounded-[10px] overflow-hidden border border-[#123A66] bg-black">
+                        <img src={formPhotoUrl} alt="Preview" className="w-full h-full object-cover" />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
