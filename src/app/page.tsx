@@ -243,7 +243,7 @@ export default function HomePage() {
               <Sparkles className="w-4 h-4 text-[#A9C8EE]" />
             </h2>
             <p className="text-xs text-[#A9C8EE] font-normal leading-relaxed">
-              Submit your price for each charity item. Every bid brings warmth!
+              Help us find the lowest prices! Enter prices and store info to help make their day.
             </p>
           </div>
           <div className="shrink-0 ml-3">

@@ -662,7 +662,7 @@ export default function AdminPage() {
                 <Search className="w-4 h-4 text-[#A9C8EE] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search item, bidder name, or phone..."
+                  placeholder="Search item, participant name, or phone..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 bg-[#123A66]/30 border border-[#123A66] focus:border-[#A9C8EE] rounded-[10px] text-xs text-white placeholder-gray-400 focus:outline-none"
@@ -783,8 +783,8 @@ export default function AdminPage() {
                               </div>
 
                               {item.lowestBidder.comment && (
-                                <p className="text-[11px] text-gray-400 italic line-clamp-1">
-                                  &ldquo;{item.lowestBidder.comment}&rdquo;
+                                <p className="text-[11px] text-gray-400 italic line-clamp-2">
+                                  <span className="text-[#A9C8EE] not-italic font-medium">Info:</span> &ldquo;{item.lowestBidder.comment}&rdquo;
                                 </p>
                               )}
                             </div>
@@ -987,7 +987,7 @@ export default function AdminPage() {
                     rows={3}
                     value={msgBody}
                     onChange={(e) => setMsgBody(e.target.value)}
-                    placeholder="e.g. We have received over 50 bids so far! Check the items again and adjust your prices to support the cause."
+                    placeholder="e.g. We have received over 50 price quotes so far! If you found lower prices or store locations, feel free to update your items."
                     className="w-full px-3.5 py-2.5 bg-[#123A66]/30 border border-[#123A66] focus:border-[#A9C8EE] rounded-[12px] text-white text-xs placeholder-gray-500 focus:outline-none"
                   />
                 </div>

@@ -80,7 +80,7 @@ export async function GET(request: Request) {
       'User Full Name',
       'Class',
       'Phone Number',
-      'Comment',
+      'Store Info & Notes',
       'Submitted At',
     ];
 

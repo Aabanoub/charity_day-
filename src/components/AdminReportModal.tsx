@@ -7,13 +7,14 @@ import { CLASS_OPTIONS } from '@/lib/constants';
 import {
   Printer,
   X,
-  Award,
   Phone,
   Calendar,
   Layers,
-  CheckCircle2,
   FileText,
-  Filter,
+  DollarSign,
+  Info,
+  CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
 
 interface AdminReportModalProps {
@@ -28,21 +29,17 @@ export default function AdminReportModal({
   items,
 }: AdminReportModalProps) {
   const [filterClass, setFilterClass] = useState<string>('ALL');
-  const [viewMode, setViewMode] = useState<'both' | 'summary' | 'detailed'>('both');
+  const [viewMode, setViewMode] = useState<'both' | 'detailed' | 'summary'>('both');
 
   if (!isOpen) return null;
 
-  // Compute Metrics
-  const totalItems = items.length;
-  const totalSubmissions = items.reduce((acc, i) => acc + i.pricesCount, 0);
-  const itemsWithBids = items.filter((i) => i.lowestPrice !== null).length;
-
-  // Filter items
+  // Filter items and their submissions based on class filter
   const displayItems = items.map((item) => {
     let filteredSubs = item.allSubmissions;
     if (filterClass !== 'ALL') {
       filteredSubs = filteredSubs.filter((s) => s.userClass === filterClass);
     }
+    // Submissions are already sorted low-to-high
     const lowest = filteredSubs.length > 0 ? filteredSubs[0] : null;
     return {
       ...item,
@@ -50,6 +47,12 @@ export default function AdminReportModal({
       lowest,
     };
   });
+
+  // Compute Metrics
+  const totalItems = items.length;
+  const totalSubmissions = displayItems.reduce((acc, i) => acc + i.filteredSubs.length, 0);
+  const itemsWithPrices = displayItems.filter((i) => i.lowest !== null).length;
+  const lowestTotalSum = displayItems.reduce((acc, i) => acc + (i.lowest ? i.lowest.price : 0), 0);
 
   const handlePrint = () => {
     window.print();
@@ -72,9 +75,9 @@ export default function AdminReportModal({
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#B22026]" />
             <div>
-              <h3 className="text-sm font-medium text-white">Executive PDF Price Sheet</h3>
+              <h3 className="text-sm font-medium text-white">Market Price Research Sheet (PDF)</h3>
               <p className="text-[11px] text-[#A9C8EE]">
-                Ready for saving as PDF or printing directly.
+                Contains all submitted prices, contributor contact info & store details.
               </p>
             </div>
           </div>
@@ -89,16 +92,7 @@ export default function AdminReportModal({
                   viewMode === 'both' ? 'bg-[#123A66] text-white font-medium' : 'text-[#A9C8EE]'
                 }`}
               >
-                Complete
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('summary')}
-                className={`px-2.5 py-1 rounded-md transition-colors ${
-                  viewMode === 'summary' ? 'bg-[#123A66] text-white font-medium' : 'text-[#A9C8EE]'
-                }`}
-              >
-                Winners Only
+                Complete Report
               </button>
               <button
                 type="button"
@@ -107,7 +101,16 @@ export default function AdminReportModal({
                   viewMode === 'detailed' ? 'bg-[#123A66] text-white font-medium' : 'text-[#A9C8EE]'
                 }`}
               >
-                All Bids Ledger
+                All Prices Ledger
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('summary')}
+                className={`px-2.5 py-1 rounded-md transition-colors ${
+                  viewMode === 'summary' ? 'bg-[#123A66] text-white font-medium' : 'text-[#A9C8EE]'
+                }`}
+              >
+                Lowest Summary
               </button>
             </div>
 
@@ -140,6 +143,7 @@ export default function AdminReportModal({
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10"
+              title="Close modal"
             >
               <X className="w-5 h-5" />
             </button>
@@ -157,13 +161,13 @@ export default function AdminReportModal({
                   MAKE THEIR <span className="text-[#B22026]">DAY</span>
                 </h1>
                 <p className="text-xs font-medium uppercase tracking-widest text-gray-600">
-                  Charity Price Collection & Auction Report
+                  Charity Market Price Research & Inquiry Sheet
                 </p>
               </div>
             </div>
 
             <div className="text-left sm:text-right text-xs text-gray-600">
-              <div className="font-semibold text-gray-900">CONFIDENTIAL ORGANIZER SHEET</div>
+              <div className="font-semibold text-gray-900">CONFIDENTIAL PURCHASING REFERENCE</div>
               <div className="flex items-center sm:justify-end gap-1 mt-0.5">
                 <Calendar className="w-3.5 h-3.5" />
                 <span>{currentDateStr}</span>
@@ -175,34 +179,40 @@ export default function AdminReportModal({
           </div>
 
           {/* KPI Summary Cards */}
-          <div className="grid grid-cols-3 gap-3 print-break-inside-avoid">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 print-break-inside-avoid">
             <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center">
               <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Catalogue Items</span>
               <span className="text-xl font-bold text-gray-900 block mt-0.5">{totalItems}</span>
             </div>
             <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center">
-              <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Prices Received</span>
+              <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Prices Gathered</span>
               <span className="text-xl font-bold text-[#123A66] block mt-0.5">{totalSubmissions}</span>
             </div>
             <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center">
-              <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Priced Items</span>
+              <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Items Priced</span>
               <span className="text-xl font-bold text-[#B22026] block mt-0.5">
-                {itemsWithBids} / {totalItems}
+                {itemsWithPrices} / {totalItems}
+              </span>
+            </div>
+            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg text-center">
+              <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Lowest Total Budget</span>
+              <span className="text-xl font-bold text-green-700 block mt-0.5">
+                ${lowestTotalSum.toFixed(2)}
               </span>
             </div>
           </div>
 
           {/* ============================================================= */}
-          {/* SECTION 1: WINNERS / LOWEST BIDS TABLE */}
+          {/* SECTION 1: EXECUTIVE SUMMARY OF LOWEST PRICES PER ITEM */}
           {/* ============================================================= */}
           {(viewMode === 'both' || viewMode === 'summary') && (
             <div className="space-y-2 print-break-inside-avoid">
               <div className="flex items-center justify-between pb-1">
                 <h2 className="text-sm font-bold uppercase tracking-wide text-gray-900 flex items-center gap-1.5">
-                  <Award className="w-4 h-4 text-[#B22026]" />
-                  <span>Lowest Price Winners Summary</span>
+                  <CheckCircle2 className="w-4 h-4 text-[#B22026]" />
+                  <span>Lowest Found Prices Summary</span>
                 </h2>
-                <span className="text-xs text-gray-500 italic">Sorted by Catalogue Order</span>
+                <span className="text-xs text-gray-500 italic">Quick Reference by Catalogue Order</span>
               </div>
 
               <div className="border border-gray-300 rounded-lg overflow-hidden">
@@ -211,11 +221,11 @@ export default function AdminReportModal({
                     <tr className="bg-gray-100 border-b border-gray-300 text-gray-700 font-semibold text-[11px]">
                       <th className="py-2.5 px-3">Item Name</th>
                       <th className="py-2.5 px-3 text-right">Lowest Price</th>
-                      <th className="py-2.5 px-3">Winner Name</th>
+                      <th className="py-2.5 px-3">Found By</th>
                       <th className="py-2.5 px-3">Class</th>
                       <th className="py-2.5 px-3">Phone Number</th>
-                      <th className="py-2.5 px-3">Comment / Note</th>
-                      <th className="py-2.5 px-3 text-center">Total Bids</th>
+                      <th className="py-2.5 px-3">Store Info & Notes</th>
+                      <th className="py-2.5 px-3 text-center">Total Quotes</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -231,7 +241,7 @@ export default function AdminReportModal({
                           {item.lowest ? `$${item.lowest.price.toFixed(2)}` : '—'}
                         </td>
                         <td className="py-2.5 px-3 font-medium text-gray-900 whitespace-nowrap">
-                          {item.lowest ? item.lowest.userName : <span className="text-gray-400 italic">No bids</span>}
+                          {item.lowest ? item.lowest.userName : <span className="text-gray-400 italic">No prices</span>}
                         </td>
                         <td className="py-2.5 px-3 text-gray-600 whitespace-nowrap">
                           {item.lowest ? item.lowest.userClass : '—'}
@@ -239,11 +249,15 @@ export default function AdminReportModal({
                         <td className="py-2.5 px-3 font-mono font-medium text-gray-900 whitespace-nowrap">
                           {item.lowest ? item.lowest.userPhone : '—'}
                         </td>
-                        <td className="py-2.5 px-3 text-gray-600 max-w-xs truncate">
-                          {item.lowest?.comment || '—'}
+                        <td className="py-2.5 px-3 text-gray-600 max-w-xs">
+                          {item.lowest?.comment ? (
+                            <span className="text-gray-800">{item.lowest.comment}</span>
+                          ) : (
+                            <span className="text-gray-400 italic">—</span>
+                          )}
                         </td>
                         <td className="py-2.5 px-3 text-center text-gray-600 font-medium">
-                          {item.pricesCount}
+                          {item.filteredSubs.length}
                         </td>
                       </tr>
                     ))}
@@ -254,91 +268,144 @@ export default function AdminReportModal({
           )}
 
           {/* ============================================================= */}
-          {/* SECTION 2: DETAILED SUBMISSIONS LEDGER (ITEM BY ITEM) */}
+          {/* SECTION 2: ALL PRICES LEDGER (ITEM BY ITEM WITH LOWEST HIGHLIGHTED) */}
           {/* ============================================================= */}
           {(viewMode === 'both' || viewMode === 'detailed') && (
             <div className="space-y-4 pt-3">
-              <h2 className="text-sm font-bold uppercase tracking-wide text-gray-900 flex items-center gap-1.5 pb-1 border-b border-gray-300">
-                <Layers className="w-4 h-4 text-[#123A66]" />
-                <span>Detailed Bids Ledger (Ranked Lowest to Highest)</span>
-              </h2>
+              <div className="flex items-center justify-between pb-1 border-b border-gray-300">
+                <h2 className="text-sm font-bold uppercase tracking-wide text-gray-900 flex items-center gap-1.5">
+                  <Layers className="w-4 h-4 text-[#123A66]" />
+                  <span>Complete Price Quotes Ledger (All Prices Added per Item)</span>
+                </h2>
+                <span className="text-xs text-gray-500 italic">Lowest price highlighted on top</span>
+              </div>
 
               <div className="space-y-4">
                 {displayItems.map((item, idx) => (
                   <div
                     key={item.id}
-                    className="border border-gray-300 rounded-lg overflow-hidden print-break-inside-avoid"
+                    className="border border-gray-300 rounded-lg overflow-hidden print-break-inside-avoid shadow-sm"
                   >
-                    {/* Item Heading */}
-                    <div className="bg-gray-100 px-3.5 py-2 border-b border-gray-300 flex items-center justify-between text-xs">
+                    {/* Item Heading Header */}
+                    <div className="bg-gray-100 px-3.5 py-2.5 border-b border-gray-300 flex flex-wrap items-center justify-between gap-2 text-xs">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-gray-900">
-                          #{idx + 1} {item.name}
+                        <span className="font-bold text-gray-900 text-sm">
+                          #{idx + 1}. {item.name}
                         </span>
-                        <span className="text-[11px] text-gray-600 bg-white px-2 py-0.5 rounded border border-gray-200">
-                          {item.filteredSubs.length} bids
+                        <span className="text-[11px] font-medium text-[#123A66] bg-white px-2 py-0.5 rounded border border-gray-200">
+                          {item.filteredSubs.length} price quote{item.filteredSubs.length === 1 ? '' : 's'}
                         </span>
                       </div>
-                      {item.lowest && (
-                        <div className="text-xs">
-                          Winning: <strong className="text-[#B22026]">${item.lowest.price.toFixed(2)}</strong> by{' '}
-                          <span className="font-medium text-gray-800">{item.lowest.userName}</span>
+
+                      {item.lowest ? (
+                        <div className="text-xs bg-[#B22026]/10 text-[#B22026] border border-[#B22026]/30 px-2.5 py-1 rounded-md font-medium">
+                          Lowest Found: <strong>${item.lowest.price.toFixed(2)}</strong> by{' '}
+                          <span className="text-gray-900 font-semibold">{item.lowest.userName}</span>{' '}
+                          <span className="text-gray-600 font-mono">({item.lowest.userPhone})</span>
                         </div>
+                      ) : (
+                        <span className="text-xs text-gray-500 italic">No price quotes yet</span>
                       )}
                     </div>
 
-                    {/* Submissions Table */}
+                    {/* All Submissions Table for this Item */}
                     {item.filteredSubs.length === 0 ? (
                       <div className="p-3 text-xs text-gray-500 italic bg-white">
-                        No submissions recorded for this item yet.
+                        No prices recorded for this item yet.
                       </div>
                     ) : (
                       <table className="w-full text-xs text-left border-collapse bg-white">
                         <thead>
-                          <tr className="border-b border-gray-200 text-gray-500 font-semibold text-[10px] uppercase">
-                            <th className="py-1.5 px-3 w-16">Rank</th>
-                            <th className="py-1.5 px-3">Price</th>
-                            <th className="py-1.5 px-3">Participant Name</th>
-                            <th className="py-1.5 px-3">Class</th>
-                            <th className="py-1.5 px-3">Phone Number</th>
-                            <th className="py-1.5 px-3">Note / Comment</th>
-                            <th className="py-1.5 px-3 text-right">Time</th>
+                          <tr className="border-b border-gray-200 text-gray-600 font-semibold text-[10px] uppercase bg-gray-50/70">
+                            <th className="py-2 px-3 w-28">Status / Rank</th>
+                            <th className="py-2 px-3 text-right">Price Found</th>
+                            <th className="py-2 px-3">Added By</th>
+                            <th className="py-2 px-3">Class</th>
+                            <th className="py-2 px-3">Phone Number</th>
+                            <th className="py-2 px-3">Store Info & Notes</th>
+                            <th className="py-2 px-3 text-right">Submitted At</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                          {item.filteredSubs.map((sub, sIdx) => (
-                            <tr
-                              key={sub.id}
-                              className={sIdx === 0 ? 'bg-red-50/70 font-medium' : 'hover:bg-gray-50'}
-                            >
-                              <td className="py-1.5 px-3">
-                                {sIdx === 0 ? (
-                                  <span className="inline-flex items-center gap-0.5 text-[#B22026] font-bold text-[10px]">
-                                    ★ #1
+                          {item.filteredSubs.map((sub, sIdx) => {
+                            const isLowest = sIdx === 0;
+                            return (
+                              <tr
+                                key={sub.id}
+                                className={
+                                  isLowest
+                                    ? 'bg-emerald-50/80 font-medium border-l-4 border-l-emerald-600 print:bg-emerald-50'
+                                    : 'hover:bg-gray-50'
+                                }
+                              >
+                                {/* Status / Rank with highlight on the lowest */}
+                                <td className="py-2 px-3 whitespace-nowrap">
+                                  {isLowest ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-600 text-white font-bold text-[10px] tracking-wide shadow-xs">
+                                      ★ LOWEST PRICE
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-500 font-medium px-2 py-0.5 bg-gray-100 rounded text-[11px]">
+                                      Quote #{sIdx + 1}
+                                    </span>
+                                  )}
+                                </td>
+
+                                {/* Price ($) */}
+                                <td className="py-2 px-3 text-right whitespace-nowrap">
+                                  <span
+                                    className={
+                                      isLowest
+                                        ? 'text-sm font-bold text-emerald-800'
+                                        : 'text-xs font-semibold text-gray-800'
+                                    }
+                                  >
+                                    ${sub.price.toFixed(2)}
                                   </span>
-                                ) : (
-                                  <span className="text-gray-500">#{sIdx + 1}</span>
-                                )}
-                              </td>
-                              <td className="py-1.5 px-3 font-bold text-gray-900 whitespace-nowrap">
-                                ${sub.price.toFixed(2)}
-                              </td>
-                              <td className="py-1.5 px-3 text-gray-900 whitespace-nowrap">{sub.userName}</td>
-                              <td className="py-1.5 px-3 text-gray-600 whitespace-nowrap">{sub.userClass}</td>
-                              <td className="py-1.5 px-3 font-mono text-gray-900 whitespace-nowrap">
-                                {sub.userPhone}
-                              </td>
-                              <td className="py-1.5 px-3 text-gray-600 truncate max-w-xs">
-                                {sub.comment || '—'}
-                              </td>
-                              <td className="py-1.5 px-3 text-right text-gray-400 text-[10px] whitespace-nowrap">
-                                {new Date(sub.submittedAt).toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </td>
-                            </tr>
-                          ))}
+                                </td>
+
+                                {/* Added By (User Name) */}
+                                <td className="py-2 px-3 text-gray-900 whitespace-nowrap font-medium">
+                                  {sub.userName}
+                                </td>
+
+                                {/* Class */}
+                                <td className="py-2 px-3 text-gray-600 whitespace-nowrap">
+                                  {sub.userClass}
+                                </td>
+
+                                {/* Phone Number */}
+                                <td className="py-2 px-3 font-mono text-gray-900 whitespace-nowrap">
+                                  <a href={`tel:${sub.userPhone}`} className="hover:underline text-gray-900">
+                                    {sub.userPhone}
+                                  </a>
+                                </td>
+
+                                {/* Store Info & Notes */}
+                                <td className="py-2 px-3 text-gray-700">
+                                  {sub.comment ? (
+                                    <span className="font-normal text-gray-900 bg-gray-50 px-2 py-0.5 rounded border border-gray-200 block">
+                                      {sub.comment}
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400 italic text-[11px]">— No info provided —</span>
+                                  )}
+                                </td>
+
+                                {/* Submitted Time */}
+                                <td className="py-2 px-3 text-right text-gray-500 text-[10px] whitespace-nowrap font-mono">
+                                  {new Date(sub.submittedAt).toLocaleDateString([], {
+                                    month: 'short',
+                                    day: 'numeric',
+                                  })}{' '}
+                                  {new Date(sub.submittedAt).toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     )}
@@ -350,8 +417,8 @@ export default function AdminReportModal({
 
           {/* Printable Footer */}
           <div className="pt-6 border-t border-gray-300 flex items-center justify-between text-[11px] text-gray-500 print-break-inside-avoid">
-            <span>Make Their Day &copy; {new Date().getFullYear()} • Charity Price Platform</span>
-            <span>Confidential • Official Event Summary</span>
+            <span>Make Their Day &copy; {new Date().getFullYear()} • Charity Market Price Research</span>
+            <span>Confidential Organizer Purchasing Report</span>
           </div>
         </div>
       </div>

@@ -24,9 +24,6 @@ export default function ItemCard({
   const [commentInput, setCommentInput] = useState<string>(
     userSubmission?.comment || ''
   );
-  const [showComment, setShowComment] = useState<boolean>(
-    Boolean(userSubmission?.comment)
-  );
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [justSaved, setJustSaved] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -38,7 +35,6 @@ export default function ItemCard({
       setPriceInput(String(userSubmission.price));
       if (userSubmission.comment) {
         setCommentInput(userSubmission.comment);
-        setShowComment(true);
       }
     }
   }, [userSubmission]);
@@ -136,19 +132,9 @@ export default function ItemCard({
           <div>
             <div className="flex items-center justify-between text-xs mb-1">
               <label htmlFor={`price-${item.id}`} className="font-medium text-gray-200">
-                Your Price ($) <span className="text-[#B22026]">*</span>
+                Price Found ($) <span className="text-[#B22026]">*</span>
               </label>
-
-              {!showComment && (
-                <button
-                  type="button"
-                  onClick={() => setShowComment(true)}
-                  className="flex items-center gap-1 text-[11px] text-[#A9C8EE] hover:text-white transition-colors duration-200"
-                >
-                  <MessageSquare className="w-3 h-3" />
-                  <span>+ Add note</span>
-                </button>
-              )}
+              <span className="text-[11px] text-[#A9C8EE]/80">Lowest market price</span>
             </div>
 
             <div className="relative">
@@ -179,35 +165,24 @@ export default function ItemCard({
             )}
           </div>
 
-          {/* Optional Comment Input */}
-          {showComment && (
-            <div className="animate-fadeIn">
-              <div className="flex items-center justify-between text-xs mb-1">
-                <label htmlFor={`comment-${item.id}`} className="text-gray-300 text-[11px]">
-                  Optional Note / Comment
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCommentInput('');
-                    setShowComment(false);
-                  }}
-                  className="text-[11px] text-gray-400 hover:text-gray-200"
-                >
-                  Remove
-                </button>
-              </div>
-              <input
-                id={`comment-${item.id}`}
-                type="text"
-                value={commentInput}
-                onChange={(e) => setCommentInput(e.target.value)}
-                placeholder="e.g. Willing to bid higher if needed!"
-                maxLength={120}
-                className="w-full px-3.5 py-2 bg-[#123A66]/20 border border-[#123A66]/70 focus:border-[#A9C8EE] rounded-[10px] text-white text-xs placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#A9C8EE] transition-all duration-200"
-              />
+          {/* Store Info / Notes Input (Encourage users to write info) */}
+          <div>
+            <div className="flex items-center justify-between text-xs mb-1">
+              <label htmlFor={`comment-${item.id}`} className="text-[#A9C8EE] text-[11px] font-medium flex items-center gap-1">
+                <MessageSquare className="w-3 h-3 text-[#A9C8EE]" />
+                <span>Store Info & Notes (Optional)</span>
+              </label>
             </div>
-          )}
+            <input
+              id={`comment-${item.id}`}
+              type="text"
+              value={commentInput}
+              onChange={(e) => setCommentInput(e.target.value)}
+              placeholder="e.g. Store name, branch, address, or product link..."
+              maxLength={150}
+              className="w-full px-3.5 py-2.5 bg-[#123A66]/20 border border-[#123A66]/70 focus:border-[#A9C8EE] rounded-[10px] text-white text-xs placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#A9C8EE] transition-all duration-200"
+            />
+          </div>
 
           {/* Submit Button */}
           <div className="pt-1">
