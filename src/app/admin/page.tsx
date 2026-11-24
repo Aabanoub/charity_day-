@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Logo from '@/components/Logo';
 import AdminReportModal from '@/components/AdminReportModal';
 import { AdminItemSummary, AdminMessage, SiteStatusSettings } from '@/lib/types';
-import { CLASS_OPTIONS } from '@/lib/constants';
 import {
   Lock,
   LogOut,
@@ -55,7 +54,6 @@ export default function AdminPage() {
   // UI Tabs & Filters
   const [activeTab, setActiveTab] = useState<'dashboard' | 'items' | 'messages' | 'closure'>('dashboard');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedClassFilter, setSelectedClassFilter] = useState<string>('ALL');
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   // Site Closure Settings State
@@ -424,20 +422,20 @@ export default function AdminPage() {
 
   // Filter Items for Dashboard
   const filteredItems = items.filter((item) => {
-    // Search query check (item name, lowest bidder name, lowest bidder phone)
-    const matchesSearch =
-      searchQuery === '' ||
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.lowestBidder?.name && item.lowestBidder.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (item.lowestBidder?.phone && item.lowestBidder.phone.includes(searchQuery));
-
-    // Class filter check
-    const matchesClass =
-      selectedClassFilter === 'ALL' ||
-      item.lowestBidder?.className === selectedClassFilter ||
-      item.allSubmissions.some((s) => s.userClass === selectedClassFilter);
-
-    return matchesSearch && matchesClass;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      item.name.toLowerCase().includes(q) ||
+      (item.lowestBidder?.name && item.lowestBidder.name.toLowerCase().includes(q)) ||
+      (item.lowestBidder?.phone && item.lowestBidder.phone.includes(q)) ||
+      (item.lowestBidder?.className && item.lowestBidder.className.toLowerCase().includes(q)) ||
+      item.allSubmissions.some(
+        (s) =>
+          s.userName.toLowerCase().includes(q) ||
+          s.userPhone.includes(q) ||
+          s.userClass.toLowerCase().includes(q)
+      )
+    );
   });
 
   // Calculate Total Submissions
@@ -674,53 +672,29 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Controls Bar: Search, Class Filter, Export CSV */}
+            {/* Controls Bar: Search & PDF Sheet */}
             <div className="bg-[#0b1d33]/80 border border-[#123A66] rounded-[16px] p-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
               {/* Search */}
               <div className="relative flex-1">
                 <Search className="w-4 h-4 text-[#A9C8EE] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search item, participant name, or phone..."
+                  placeholder="Search item, participant name, phone, or class..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-3 py-2 bg-[#123A66]/30 border border-[#123A66] focus:border-[#A9C8EE] rounded-[10px] text-xs text-white placeholder-gray-400 focus:outline-none"
                 />
               </div>
 
-              {/* Class Filter */}
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-[#A9C8EE] shrink-0" />
-                <select
-                  value={selectedClassFilter}
-                  onChange={(e) => setSelectedClassFilter(e.target.value)}
-                  className="bg-[#0d2745] border border-[#123A66] text-xs text-white rounded-[10px] px-3 py-2 focus:outline-none focus:border-[#A9C8EE]"
-                >
-                  <option value="ALL">All Classes</option>
-                  {Array.from(
-                    new Set([
-                      ...CLASS_OPTIONS,
-                      ...items.flatMap((i) => i.allSubmissions.map((s) => s.userClass).filter(Boolean)),
-                    ])
-                  )
-                    .sort()
-                    .map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                </select>
-
-                {/* PDF Sheet Report Button */}
-                <button
-                  type="button"
-                  onClick={() => setReportModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 bg-[#B22026] hover:bg-[#c9252c] text-white text-xs font-medium rounded-[10px] transition-colors duration-200 tap-active shadow-md shrink-0"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>PDF Sheet</span>
-                </button>
-              </div>
+              {/* PDF Sheet Report Button */}
+              <button
+                type="button"
+                onClick={() => setReportModalOpen(true)}
+                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-[#B22026] hover:bg-[#c9252c] text-white text-xs font-medium rounded-[10px] transition-colors duration-200 tap-active shadow-md shrink-0"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>PDF Sheet</span>
+              </button>
             </div>
 
             {/* Items List */}

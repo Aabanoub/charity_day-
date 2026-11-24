@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Logo from './Logo';
 import { AdminItemSummary } from '@/lib/types';
-import { CLASS_OPTIONS } from '@/lib/constants';
 import {
   Printer,
   X,
@@ -28,22 +27,16 @@ export default function AdminReportModal({
   onClose,
   items,
 }: AdminReportModalProps) {
-  const [filterClass, setFilterClass] = useState<string>('ALL');
   const [viewMode, setViewMode] = useState<'both' | 'detailed' | 'summary'>('both');
 
   if (!isOpen) return null;
 
-  // Filter items and their submissions based on class filter
+  // Prepare items and their submissions (already sorted low-to-high)
   const displayItems = items.map((item) => {
-    let filteredSubs = item.allSubmissions;
-    if (filterClass !== 'ALL') {
-      filteredSubs = filteredSubs.filter((s) => s.userClass === filterClass);
-    }
-    // Submissions are already sorted low-to-high
-    const lowest = filteredSubs.length > 0 ? filteredSubs[0] : null;
+    const lowest = item.allSubmissions.length > 0 ? item.allSubmissions[0] : null;
     return {
       ...item,
-      filteredSubs,
+      filteredSubs: item.allSubmissions,
       lowest,
     };
   });
@@ -114,27 +107,6 @@ export default function AdminReportModal({
               </button>
             </div>
 
-            {/* Class Filter */}
-            <select
-              value={filterClass}
-              onChange={(e) => setFilterClass(e.target.value)}
-              className="bg-[#0d2745] border border-[#123A66] text-xs text-white rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#A9C8EE]"
-            >
-              <option value="ALL">All Classes</option>
-              {Array.from(
-                new Set([
-                  ...CLASS_OPTIONS,
-                  ...items.flatMap((i) => i.allSubmissions.map((s) => s.userClass).filter(Boolean)),
-                ])
-              )
-                .sort()
-                .map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-            </select>
-
             {/* Print / Save PDF Button */}
             <button
               type="button"
@@ -178,9 +150,6 @@ export default function AdminReportModal({
               <div className="flex items-center sm:justify-end gap-1 mt-0.5">
                 <Calendar className="w-3.5 h-3.5" />
                 <span>{currentDateStr}</span>
-              </div>
-              <div className="text-[11px] text-gray-500 mt-0.5">
-                Filter: <strong>{filterClass === 'ALL' ? 'All Groups & Classes' : filterClass}</strong>
               </div>
             </div>
           </div>
