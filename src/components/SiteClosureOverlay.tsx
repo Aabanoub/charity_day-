@@ -12,7 +12,7 @@ export default function SiteClosureOverlay() {
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch('/api/settings');
+      const res = await fetch('/api/settings', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (data.settings) {
@@ -27,6 +27,15 @@ export default function SiteClosureOverlay() {
   useEffect(() => {
     fetchStatus();
 
+    // Re-check whenever tab becomes visible or focused
+    const handleResume = () => {
+      if (document.visibilityState === 'visible') {
+        fetchStatus();
+      }
+    };
+    document.addEventListener('visibilitychange', handleResume);
+    window.addEventListener('focus', handleResume);
+
     // 1. Supabase Realtime subscription
     const supabase = getSupabase();
     let channel: any = null;
@@ -40,17 +49,21 @@ export default function SiteClosureOverlay() {
           (payload: any) => {
             if (payload.new && payload.new.key === 'site_status' && payload.new.value) {
               setSiteStatus(payload.new.value as SiteStatusSettings);
+            } else {
+              fetchStatus();
             }
           }
         )
         .subscribe();
     }
 
-    // 2. Periodic polling every 5 seconds as fallback
-    const interval = setInterval(fetchStatus, 5000);
+    // 2. Periodic polling every 3 seconds as fallback
+    const interval = setInterval(fetchStatus, 3000);
 
     return () => {
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleResume);
+      window.removeEventListener('focus', handleResume);
       if (channel && supabase) {
         supabase.removeChannel(channel);
       }
@@ -62,7 +75,7 @@ export default function SiteClosureOverlay() {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fadeIn select-none">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-fadeIn select-none">
       <div className="relative w-full max-w-md bg-brand-black border border-[#B22026]/70 rounded-[16px] p-6 sm:p-8 shadow-[0_0_50px_rgba(178,32,38,0.35),0_0_0_1px_rgba(169,200,238,0.2)] text-white text-center">
         {/* Soft Glowing Halo */}
         <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-[#B22026]/30 rounded-full blur-2xl pointer-events-none" />
