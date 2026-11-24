@@ -16,6 +16,7 @@ import {
   Filter,
   Send,
   Eye,
+  EyeOff,
   ChevronDown,
   ChevronUp,
   Phone,
@@ -43,6 +44,7 @@ export default function AdminPage() {
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   // Admin Data States
   const [items, setItems] = useState<AdminItemSummary[]>([]);
@@ -467,7 +469,7 @@ export default function AdminPage() {
                 </div>
                 <input
                   id="adminPassword"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={passwordInput}
                   onChange={(e) => {
@@ -475,8 +477,21 @@ export default function AdminPage() {
                     if (loginError) setLoginError(null);
                   }}
                   placeholder="Enter administrator password"
-                  className="w-full pl-10 pr-4 py-3 bg-[#123A66]/30 border border-[#123A66] focus:border-[#A9C8EE] rounded-[12px] text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-[#A9C8EE] transition-all duration-200"
+                  className="w-full pl-10 pr-11 py-3 bg-[#123A66]/30 border border-[#123A66] focus:border-[#A9C8EE] rounded-[12px] text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-[#A9C8EE] transition-all duration-200"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-[#A9C8EE]/70 hover:text-white transition-colors focus:outline-none"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
               </div>
               {loginError && (
                 <p className="flex items-center gap-1 text-[#B22026] text-xs mt-2">
