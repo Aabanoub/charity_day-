@@ -7,6 +7,7 @@ import ItemCard from '@/components/ItemCard';
 import ProgressBar from '@/components/ProgressBar';
 import ThankYouScreen from '@/components/ThankYouScreen';
 import AnnouncementPopup from '@/components/AnnouncementPopup';
+import SiteClosureOverlay from '@/components/SiteClosureOverlay';
 import SkeletonCard from '@/components/SkeletonCard';
 import { Item, PriceSubmission, UserProfile } from '@/lib/types';
 import { Heart, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
@@ -140,6 +141,8 @@ export default function HomePage() {
   if (isSurveyGated || !userProfile) {
     return (
       <main className="min-h-screen bg-brand-black flex flex-col justify-center items-center p-4">
+        {/* Site Closure Overlay if Event Closed */}
+        <SiteClosureOverlay />
         <SurveyModal
           isOpen={true}
           initialProfile={userProfile}
@@ -151,6 +154,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-brand-black text-white flex flex-col">
+      {/* Site Closure Overlay if Event Closed */}
+      <SiteClosureOverlay />
+
       {/* Realtime Admin Broadcast Popups */}
       <AnnouncementPopup />
 

@@ -138,3 +138,43 @@ VALUES
   ('c1000000-0000-0000-0000-000000000011', 'Organic Herbal Infusion Tea Selection', 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80', 'Chamomile, peppermint, hibiscus, and green tea loose blends.', TRUE, 11),
   ('c1000000-0000-0000-0000-000000000012', 'Framed Inspirational Calligraphy Art', 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=600&auto=format&fit=crop&q=80', 'Original custom lettering piece framed in black natural oak.', TRUE, 12)
 ON CONFLICT (id) DO NOTHING;
+
+
+-- 11. System Settings Table (Site status, Event Closure)
+CREATE TABLE IF NOT EXISTS mtd_settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+ALTER TABLE mtd_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public can read settings"
+  ON mtd_settings FOR SELECT
+  USING (TRUE);
+
+CREATE POLICY "Public can upsert settings"
+  ON mtd_settings FOR INSERT
+  WITH CHECK (TRUE);
+
+CREATE POLICY "Public can update settings"
+  ON mtd_settings FOR UPDATE
+  USING (TRUE)
+  WITH CHECK (TRUE);
+
+INSERT INTO mtd_settings (key, value)
+VALUES (
+  'site_status',
+  '{"isClosed": false, "title": "Charity Day Has Concluded", "message": "Thank you for your incredible support! Price submissions are currently closed while organizers review the results."}'::jsonb
+)
+ON CONFLICT (key) DO NOTHING;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND tablename = 'mtd_settings'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE mtd_settings;
+  END IF;
+END $$;

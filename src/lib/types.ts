@@ -66,3 +66,10 @@ export interface AdminItemSummary {
     submittedAt: string;
   }>;
 }
+
+
+export interface SiteStatusSettings {
+  isClosed: boolean;
+  title: string;
+  message: string;
+}

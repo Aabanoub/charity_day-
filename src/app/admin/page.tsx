@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Logo from '@/components/Logo';
-import { AdminItemSummary, AdminMessage } from '@/lib/types';
+import { AdminItemSummary, AdminMessage, SiteStatusSettings } from '@/lib/types';
 import { CLASS_OPTIONS } from '@/lib/constants';
 import {
   Lock,
@@ -33,6 +33,8 @@ import {
   Camera,
   Loader2,
   RefreshCw,
+  Power,
+  Radio,
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -48,10 +50,24 @@ export default function AdminPage() {
   const [adminToken, setAdminToken] = useState<string>('');
 
   // UI Tabs & Filters
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'items' | 'messages'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'items' | 'messages' | 'closure'>('dashboard');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>('ALL');
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+
+  // Site Closure Settings State
+  const [siteSettings, setSiteSettings] = useState<SiteStatusSettings>({
+    isClosed: false,
+    title: 'Charity Day Has Concluded',
+    message:
+      'Thank you for your incredible support! Price submissions are currently closed while organizers review the results.',
+  });
+  const [closureTitleInput, setClosureTitleInput] = useState<string>('Charity Day Has Concluded');
+  const [closureMsgInput, setClosureMsgInput] = useState<string>(
+    'Thank you for your incredible support! Price submissions are currently closed while organizers review the results.'
+  );
+  const [isSavingSettings, setIsSavingSettings] = useState<boolean>(false);
+  const [settingsSuccess, setSettingsSuccess] = useState<boolean>(false);
 
   // Item Modal (Add / Edit)
   const [itemModalOpen, setItemModalOpen] = useState<boolean>(false);
@@ -143,9 +159,10 @@ export default function AdminPage() {
     try {
       const headers = { 'x-admin-token': token };
 
-      const [itemsRes, msgsRes] = await Promise.all([
+      const [itemsRes, msgsRes, settingsRes] = await Promise.all([
         fetch('/api/admin/items', { headers }),
         fetch('/api/admin/messages', { headers }),
+        fetch('/api/settings'),
       ]);
 
       if (itemsRes.status === 401 || msgsRes.status === 401) {
@@ -163,11 +180,56 @@ export default function AdminPage() {
         const msgsData = await msgsRes.json();
         setMessages(msgsData.messages || []);
       }
+
+      if (settingsRes.ok) {
+        const settingsData = await settingsRes.json();
+        if (settingsData.settings) {
+          setSiteSettings(settingsData.settings);
+          setClosureTitleInput(settingsData.settings.title);
+          setClosureMsgInput(settingsData.settings.message);
+        }
+      }
     } catch (err) {
       console.error('Error fetching admin data:', err);
     } finally {
       setIsLoadingData(false);
     }
+  };
+
+  const handleUpdateSiteSettings = async (updated: SiteStatusSettings) => {
+    setIsSavingSettings(true);
+    setSettingsSuccess(false);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': adminToken,
+        },
+        body: JSON.stringify(updated),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setSiteSettings(data.settings);
+        setClosureTitleInput(data.settings.title);
+        setClosureMsgInput(data.settings.message);
+        setSettingsSuccess(true);
+        setTimeout(() => setSettingsSuccess(false), 3000);
+      }
+    } catch (err) {
+      console.error('Error saving site settings:', err);
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  const handleToggleSiteClosure = async () => {
+    await handleUpdateSiteSettings({
+      isClosed: !siteSettings.isClosed,
+      title: closureTitleInput,
+      message: closureMsgInput,
+    });
   };
 
   useEffect(() => {
@@ -528,8 +590,42 @@ export default function AdminPage() {
             <Send className="w-3.5 h-3.5" />
             <span>Pop-up Messages</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('closure')}
+            className={`py-2.5 px-4 text-xs font-medium border-b-2 transition-all duration-200 flex items-center gap-1.5 ${
+              activeTab === 'closure'
+                ? 'border-[#B22026] text-white font-medium'
+                : siteSettings.isClosed
+                ? 'border-transparent text-[#B22026] hover:text-white font-medium'
+                : 'border-transparent text-[#A9C8EE]/70 hover:text-white'
+            }`}
+          >
+            <Power className={`w-3.5 h-3.5 ${siteSettings.isClosed ? 'text-[#B22026] animate-pulse' : 'text-[#A9C8EE]'}`} />
+            <span>Event Status {siteSettings.isClosed ? '(CLOSED)' : ''}</span>
+          </button>
         </div>
       </header>
+
+      {/* Persistent Closed Alert Banner */}
+      {siteSettings.isClosed && (
+        <div className="bg-[#B22026]/20 border-b border-[#B22026]/60 px-4 py-2.5 text-xs text-white flex items-center justify-between max-w-4xl mx-auto w-full">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#B22026] animate-ping shrink-0" />
+            <span>
+              <strong>Website is currently CLOSED to the public.</strong> Visitors see your custom closure popup.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleToggleSiteClosure}
+            className="px-2.5 py-1 rounded bg-[#B22026] hover:bg-[#c9252c] text-white font-medium text-[11px] transition-colors"
+          >
+            Re-open Now
+          </button>
+        </div>
+      )}
 
       {/* Main Admin Workspace */}
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
@@ -938,6 +1034,143 @@ export default function AdminPage() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* =============================================================== */}
+        {/* TAB 4: EVENT CLOSURE & SITE STATUS */}
+        {/* =============================================================== */}
+        {activeTab === 'closure' && (
+          <div className="space-y-6 animate-fadeIn">
+            {/* Status Control Card */}
+            <div
+              className={`rounded-[16px] p-6 border transition-all duration-200 ${
+                siteSettings.isClosed
+                  ? 'bg-[#B22026]/10 border-[#B22026] shadow-[0_0_30px_rgba(178,32,38,0.2)]'
+                  : 'bg-[#0b1d33] border-[#123A66]'
+              }`}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#123A66]">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-3 h-3 rounded-full ${
+                        siteSettings.isClosed ? 'bg-[#B22026] animate-pulse' : 'bg-green-400'
+                      }`}
+                    />
+                    <h2 className="text-lg font-medium text-white">
+                      Website Status: {siteSettings.isClosed ? 'CLOSED TO PUBLIC' : 'OPEN & ACCEPTING PRICES'}
+                    </h2>
+                  </div>
+                  <p className="text-xs text-[#A9C8EE]">
+                    {siteSettings.isClosed
+                      ? 'The public website is currently blocked by your custom closure popup. Organizers can still access /admin.'
+                      : 'The website is active. Participants can browse items, register, and submit prices.'}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleToggleSiteClosure}
+                  disabled={isSavingSettings}
+                  className={`px-6 py-3 rounded-[12px] font-medium text-sm flex items-center justify-center gap-2 shadow-lg transition-all duration-200 tap-active shrink-0 ${
+                    siteSettings.isClosed
+                      ? 'bg-green-600 hover:bg-green-500 text-white shadow-green-900/40'
+                      : 'bg-[#B22026] hover:bg-[#c9252c] text-white shadow-[0_4px_16px_rgba(178,32,38,0.4)]'
+                  }`}
+                >
+                  <Power className="w-4 h-4" />
+                  <span>{siteSettings.isClosed ? 'Re-open Website Now' : 'Close Website to Public'}</span>
+                </button>
+              </div>
+
+              {/* Customizable Message Form */}
+              <div className="pt-6 space-y-4">
+                <h3 className="text-sm font-medium text-white flex items-center gap-2">
+                  <Edit className="w-4 h-4 text-[#A9C8EE]" />
+                  <span>Customize the Closure Popup Message</span>
+                </h3>
+                <p className="text-xs text-[#A9C8EE]/80">
+                  When the website is closed, visitors will see a full-screen pop-up with your custom message and the Heart Handshake logo.
+                </p>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-200 mb-1">
+                      Popup Headline / Title
+                    </label>
+                    <input
+                      type="text"
+                      value={closureTitleInput}
+                      onChange={(e) => setClosureTitleInput(e.target.value)}
+                      placeholder="e.g. Charity Day Has Concluded ❤️"
+                      className="w-full px-3.5 py-2.5 bg-[#123A66]/30 border border-[#123A66] focus:border-[#A9C8EE] rounded-[12px] text-white text-xs placeholder-gray-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-200 mb-1">
+                      Popup Message / Announcement Body
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={closureMsgInput}
+                      onChange={(e) => setClosureMsgInput(e.target.value)}
+                      placeholder="e.g. Thank you for making their day! Price submissions are now officially closed. Results will be announced shortly."
+                      className="w-full px-3.5 py-2.5 bg-[#123A66]/30 border border-[#123A66] focus:border-[#A9C8EE] rounded-[12px] text-white text-xs placeholder-gray-500 focus:outline-none leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    {settingsSuccess ? (
+                      <span className="flex items-center gap-1.5 text-green-400 text-xs font-medium animate-fadeIn">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Settings saved & updated across all devices!</span>
+                      </span>
+                    ) : (
+                      <div />
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleUpdateSiteSettings({
+                          isClosed: siteSettings.isClosed,
+                          title: closureTitleInput,
+                          message: closureMsgInput,
+                        })
+                      }
+                      disabled={isSavingSettings}
+                      className="px-5 py-2.5 bg-[#123A66] hover:bg-[#18497d] border border-[#A9C8EE]/40 text-white text-xs font-medium rounded-[12px] transition-colors"
+                    >
+                      {isSavingSettings ? 'Saving...' : 'Save Message'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Live Preview Box */}
+                <div className="pt-6 border-t border-[#123A66]/60">
+                  <span className="text-xs uppercase tracking-wider text-[#A9C8EE] font-medium block mb-3">
+                    Live Visitor Preview
+                  </span>
+                  <div className="p-6 bg-black border border-[#123A66] rounded-[16px] max-w-sm mx-auto text-center shadow-inner">
+                    <div className="flex justify-center mb-3">
+                      <Logo size="md" showText={false} />
+                    </div>
+                    <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#B22026]/20 border border-[#B22026]/40 text-[10px] font-medium text-[#B22026] mb-2">
+                      <Lock className="w-3 h-3" />
+                      <span>Submissions Closed</span>
+                    </div>
+                    <h4 className="text-base font-medium text-white mb-2">
+                      {closureTitleInput || 'Charity Day Has Concluded'}
+                    </h4>
+                    <p className="text-xs text-[#A9C8EE] leading-relaxed whitespace-pre-wrap">
+                      {closureMsgInput || 'Thank you for your support! Price submissions are now closed.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
