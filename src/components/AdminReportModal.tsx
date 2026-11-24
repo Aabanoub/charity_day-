@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import Logo from './Logo';
 import { AdminItemSummary } from '@/lib/types';
+import { downloadPdfReport } from '@/lib/pdfGenerator';
 import {
   Printer,
+  Download,
   X,
   Phone,
   Calendar,
@@ -28,6 +29,7 @@ export default function AdminReportModal({
   items,
 }: AdminReportModalProps) {
   const [viewMode, setViewMode] = useState<'both' | 'detailed' | 'summary'>('both');
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   if (!isOpen) return null;
 
@@ -51,6 +53,17 @@ export default function AdminReportModal({
     window.print();
   };
 
+  const handleDownloadPdf = () => {
+    setIsDownloadingPdf(true);
+    try {
+      downloadPdfReport(items, { viewMode });
+    } catch (err) {
+      console.error('Failed to generate PDF:', err);
+    } finally {
+      setTimeout(() => setIsDownloadingPdf(false), 800);
+    }
+  };
+
   const currentDateStr = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -63,7 +76,7 @@ export default function AdminReportModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/90 backdrop-blur-md overflow-y-auto animate-fadeIn print-modal-container">
       <div className="relative w-full max-w-4xl bg-[#0b1d33] border border-[#123A66] rounded-[16px] overflow-hidden shadow-2xl flex flex-col max-h-[92vh] print-sheet my-auto">
-        {/* On-Screen Controls Header (Hidden during actual print/PDF export) */}
+        {/* On-Screen Controls Header (Hidden during print / export) */}
         <div className="no-print p-4 bg-[#071526] border-b border-[#123A66] flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#B22026]" />
@@ -107,14 +120,26 @@ export default function AdminReportModal({
               </button>
             </div>
 
-            {/* Print / Save PDF Button */}
+            {/* Direct Native PDF Download Button */}
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+              className="px-4 py-1.5 bg-[#B22026] hover:bg-[#c9252c] text-white text-xs font-medium rounded-lg flex items-center gap-1.5 shadow transition-all duration-200 tap-active disabled:opacity-50"
+            >
+              <Download className="w-4 h-4" />
+              <span>{isDownloadingPdf ? 'Generating PDF...' : 'Download PDF (.pdf)'}</span>
+            </button>
+
+            {/* Browser Print Button */}
             <button
               type="button"
               onClick={handlePrint}
-              className="px-4 py-1.5 bg-[#B22026] hover:bg-[#c9252c] text-white text-xs font-medium rounded-lg flex items-center gap-1.5 shadow transition-all duration-200 tap-active"
+              className="px-3 py-1.5 bg-[#123A66] hover:bg-[#18497d] text-white text-xs font-medium rounded-lg flex items-center gap-1.5 shadow transition-all duration-200 tap-active"
+              title="Print document or save using browser dialog"
             >
               <Printer className="w-4 h-4" />
-              <span>Print / Save as PDF</span>
+              <span>Print</span>
             </button>
 
             {/* Close Button */}
@@ -129,12 +154,23 @@ export default function AdminReportModal({
           </div>
         </div>
 
-        {/* Printable Document Body */}
-        <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 text-gray-900 bg-white print:p-0">
+        {/* Printable Document Body - Strictly isolated with id="printable-report-content" */}
+        <div
+          id="printable-report-content"
+          className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 text-gray-900 bg-white print:p-0"
+        >
           {/* Printable Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b-2 border-gray-900 print-break-inside-avoid">
             <div className="flex items-center gap-3">
-              <Logo size="lg" showText={false} variant="badge" />
+              {/* High-res transparent logo for print & display */}
+              <div className="w-14 h-14 flex items-center justify-center shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/logo-transparent.png"
+                  alt="Make Their Day Logo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-gray-900 leading-tight">
                   MAKE THEIR <span className="text-[#B22026]">DAY</span>
@@ -178,10 +214,20 @@ export default function AdminReportModal({
             </div>
           </div>
 
+          {/* Empty Catalogue State */}
+          {items.length === 0 && (
+            <div className="p-8 text-center bg-gray-50 border border-dashed border-gray-300 rounded-lg space-y-2">
+              <p className="text-sm font-semibold text-gray-800">No items currently in the catalogue</p>
+              <p className="text-xs text-gray-500 max-w-md mx-auto">
+                Once items are added to the catalogue in the Admin Dashboard, price submissions and lowest-price research will appear here.
+              </p>
+            </div>
+          )}
+
           {/* ============================================================= */}
           {/* SECTION 1: EXECUTIVE SUMMARY OF LOWEST PRICES PER ITEM */}
           {/* ============================================================= */}
-          {(viewMode === 'both' || viewMode === 'summary') && (
+          {items.length > 0 && (viewMode === 'both' || viewMode === 'summary') && (
             <div className="space-y-2 print-break-inside-avoid">
               <div className="flex items-center justify-between pb-1">
                 <h2 className="text-sm font-bold uppercase tracking-wide text-gray-900 flex items-center gap-1.5">
@@ -246,7 +292,7 @@ export default function AdminReportModal({
           {/* ============================================================= */}
           {/* SECTION 2: ALL PRICES LEDGER (ITEM BY ITEM WITH LOWEST HIGHLIGHTED) */}
           {/* ============================================================= */}
-          {(viewMode === 'both' || viewMode === 'detailed') && (
+          {items.length > 0 && (viewMode === 'both' || viewMode === 'detailed') && (
             <div className="space-y-4 pt-3">
               <div className="flex items-center justify-between pb-1 border-b border-gray-300">
                 <h2 className="text-sm font-bold uppercase tracking-wide text-gray-900 flex items-center gap-1.5">

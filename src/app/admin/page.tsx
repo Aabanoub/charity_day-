@@ -533,7 +533,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-brand-black text-white flex flex-col">
       {/* Admin Top Header */}
-      <header className="sticky top-0 z-40 w-full bg-brand-black/95 backdrop-blur-md border-b border-[#123A66]/80">
+      <header className="no-print sticky top-0 z-40 w-full bg-brand-black/95 backdrop-blur-md border-b border-[#123A66]/80">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="hover:opacity-90">
@@ -648,7 +648,7 @@ export default function AdminPage() {
       )}
 
       {/* Main Admin Workspace */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-6">
+      <main className="no-print flex-1 max-w-4xl w-full mx-auto px-4 py-6">
         {/* =============================================================== */}
         {/* TAB 1: DASHBOARD (Lowest price, owner, phone, comment, tap to expand) */}
         {/* =============================================================== */}
