@@ -165,7 +165,7 @@ export default function SurveyModal({ onComplete, initialProfile, isOpen }: Surv
                 required
                 value={phoneNumber}
                 onChange={handlePhoneChange}
-                placeholder="e.g. +1 555-0192 or 0712345678"
+                placeholder="e.g. 01012345678 or +20 10 1234 5678"
                 className={`w-full pl-10 pr-4 py-3 bg-[#123A66]/30 border ${
                   phoneError ? 'border-[#B22026]' : 'border-[#123A66] focus:border-[#A9C8EE]'
                 } rounded-[12px] text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-[#A9C8EE] transition-all duration-200`}
