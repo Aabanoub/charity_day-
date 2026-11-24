@@ -89,6 +89,34 @@ export async function POST(request: Request) {
     const supabase = getServerSupabase();
 
     if (supabase) {
+      // Verify that the item's section is OPEN before accepting submissions
+      const { data: itemData } = await supabase
+        .from('mtd_items')
+        .select('id, section_id')
+        .eq('id', itemId)
+        .single();
+
+      if (itemData?.section_id) {
+        const { data: sectionData } = await supabase
+          .from('mtd_sections')
+          .select('status')
+          .eq('id', itemData.section_id)
+          .single();
+
+        if (sectionData && sectionData.status !== 'OPEN') {
+          return NextResponse.json(
+            {
+              error:
+                sectionData.status === 'COMPLETED'
+                  ? 'Thank you! This section is completed. We appreciate your contribution ❤️'
+                  : 'Thank you! This section is currently closed.',
+              sectionStatus: sectionData.status,
+            },
+            { status: 403, headers: NO_CACHE_HEADERS }
+          );
+        }
+      }
+
       const { data, error } = await supabase
         .from('mtd_submissions')
         .upsert(

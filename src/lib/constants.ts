@@ -117,3 +117,46 @@ export const INITIAL_ITEMS = [
     orderIndex: 12,
   },
 ];
+
+export const DEFAULT_SECTIONS = [
+  {
+    id: 'meat_chicken',
+    nameEn: 'Meat & Chicken',
+    nameAr: 'لحوم وفراخ',
+    imageUrl: '/categories/meat-chicken.jpg',
+    status: 'OPEN' as const,
+    displayOrder: 1,
+  },
+  {
+    id: 'supermarket',
+    nameEn: 'Supermarket',
+    nameAr: 'سوبرماركت',
+    imageUrl: '/categories/supermarket.jpg',
+    status: 'OPEN' as const,
+    displayOrder: 2,
+  },
+  {
+    id: 'vegetables_fruits',
+    nameEn: 'Vegetables & Fruits',
+    nameAr: 'خضار وفاكهة',
+    imageUrl: '/categories/vegetables-fruits.jpg',
+    status: 'OPEN' as const,
+    displayOrder: 3,
+  },
+  {
+    id: 'spices',
+    nameEn: 'Spices',
+    nameAr: 'العطارة',
+    imageUrl: '/categories/spices.jpg',
+    status: 'OPEN' as const,
+    displayOrder: 4,
+  },
+  {
+    id: 'paper_products',
+    nameEn: 'Paper Products',
+    nameAr: 'ورقيات',
+    imageUrl: '/categories/paper-products.jpg',
+    status: 'OPEN' as const,
+    displayOrder: 5,
+  },
+];

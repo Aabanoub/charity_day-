@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Logo from '@/components/Logo';
 import AdminReportModal from '@/components/AdminReportModal';
-import { AdminItemSummary, AdminMessage, SiteStatusSettings } from '@/lib/types';
+import { AdminItemSummary, AdminMessage, SiteStatusSettings, Section, SectionStatus } from '@/lib/types';
+import { DEFAULT_SECTIONS } from '@/lib/constants';
 import {
   Lock,
   LogOut,
@@ -36,6 +37,8 @@ import {
   Power,
   Radio,
   FileText,
+  Grid,
+  Check,
 } from 'lucide-react';
 
 export default function AdminPage() {
@@ -52,9 +55,18 @@ export default function AdminPage() {
   const [adminToken, setAdminToken] = useState<string>('');
 
   // UI Tabs & Filters
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'items' | 'messages' | 'closure'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'sections' | 'items' | 'messages' | 'closure'>('dashboard');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
+
+  // Shopping Sections State
+  const [sections, setSections] = useState<Section[]>(DEFAULT_SECTIONS);
+  const [isLoadingSections, setIsLoadingSections] = useState<boolean>(false);
+  const [statusConfirmModal, setStatusConfirmModal] = useState<{
+    section: Section;
+    newStatus: SectionStatus;
+  } | null>(null);
+  const [isUpdatingSection, setIsUpdatingSection] = useState<boolean>(false);
 
   // Site Closure Settings State
   const [siteSettings, setSiteSettings] = useState<SiteStatusSettings>({
@@ -77,6 +89,7 @@ export default function AdminPage() {
   const [formName, setFormName] = useState<string>('');
   const [formPhotoUrl, setFormPhotoUrl] = useState<string>('');
   const [formDescription, setFormDescription] = useState<string>('');
+  const [formSectionId, setFormSectionId] = useState<string>('supermarket');
   const [formActive, setFormActive] = useState<boolean>(true);
   const [isSavingItem, setIsSavingItem] = useState<boolean>(false);
 
@@ -161,10 +174,11 @@ export default function AdminPage() {
     try {
       const headers = { 'x-admin-token': token };
 
-      const [itemsRes, msgsRes, settingsRes] = await Promise.all([
+      const [itemsRes, msgsRes, settingsRes, sectionsRes] = await Promise.all([
         fetch('/api/admin/items', { headers }),
         fetch('/api/admin/messages', { headers }),
         fetch('/api/settings'),
+        fetch('/api/sections'),
       ]);
 
       if (itemsRes.status === 401 || msgsRes.status === 401) {
@@ -176,6 +190,13 @@ export default function AdminPage() {
       if (itemsRes.ok) {
         const itemsData = await itemsRes.json();
         setItems(itemsData.items || []);
+      }
+
+      if (sectionsRes.ok) {
+        const sectionsData = await sectionsRes.json();
+        if (sectionsData.sections && sectionsData.sections.length > 0) {
+          setSections(sectionsData.sections);
+        }
       }
 
       if (msgsRes.ok) {
@@ -239,6 +260,51 @@ export default function AdminPage() {
     });
   };
 
+  // Section status change handler
+  const handleConfirmStatusChange = async () => {
+    if (!statusConfirmModal) return;
+    const { section, newStatus } = statusConfirmModal;
+    setIsUpdatingSection(true);
+
+    // Optimistic UI update
+    setSections((prev) =>
+      prev.map((s) => (s.id === section.id ? { ...s, status: newStatus } : s))
+    );
+
+    try {
+      const res = await fetch('/api/admin/sections', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': adminToken,
+        },
+        body: JSON.stringify({
+          sectionId: section.id,
+          status: newStatus,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.section) {
+          setSections((prev) =>
+            prev.map((s) => (s.id === data.section.id ? data.section : s))
+          );
+        }
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Failed to update section status');
+        fetchAdminData();
+      }
+    } catch (err) {
+      console.error('Error updating section status:', err);
+      fetchAdminData();
+    } finally {
+      setIsUpdatingSection(false);
+      setStatusConfirmModal(null);
+    }
+  };
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchAdminData(adminToken);
@@ -287,6 +353,7 @@ export default function AdminPage() {
     setFormName('');
     setFormPhotoUrl('');
     setFormDescription('');
+    setFormSectionId('supermarket');
     setFormActive(true);
     setUploadError(null);
     setShowUrlFallback(false);
@@ -299,6 +366,7 @@ export default function AdminPage() {
     setFormName(item.name);
     setFormPhotoUrl(item.photoUrl);
     setFormDescription(item.description || '');
+    setFormSectionId(item.sectionId || 'supermarket');
     setFormActive(item.active);
     setUploadError(null);
     setShowUrlFallback(false);
@@ -328,6 +396,7 @@ export default function AdminPage() {
         name: formName.trim(),
         photoUrl: formPhotoUrl.trim(),
         description: formDescription.trim(),
+        sectionId: formSectionId,
         active: formActive,
       };
 
@@ -587,6 +656,32 @@ export default function AdminPage() {
 
           <button
             type="button"
+            onClick={() => setActiveTab('sections')}
+            className={`py-2.5 px-4 text-xs font-medium border-b-2 transition-all duration-200 flex items-center gap-1.5 ${
+              activeTab === 'sections'
+                ? 'border-[#B22026] text-white font-medium'
+                : 'border-transparent text-[#A9C8EE]/70 hover:text-white'
+            }`}
+          >
+            <Grid className="w-3.5 h-3.5" />
+            <span>Categories (5)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('sections')}
+            className={`py-2.5 px-4 text-xs font-medium border-b-2 transition-all duration-200 flex items-center gap-1.5 ${
+              activeTab === 'sections'
+                ? 'border-[#B22026] text-white font-medium'
+                : 'border-transparent text-[#A9C8EE]/70 hover:text-white'
+            }`}
+          >
+            <Grid className="w-3.5 h-3.5" />
+            <span>Category Sections (5)</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab('items')}
             className={`py-2.5 px-4 text-xs font-medium border-b-2 transition-all duration-200 flex items-center gap-1.5 ${
               activeTab === 'items'
@@ -726,10 +821,15 @@ export default function AdminPage() {
                             <h3 className="font-medium text-white text-base leading-tight">
                               {item.name}
                             </h3>
-                            <div className="flex items-center gap-2 mt-1">
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
                               <span className="text-[11px] text-[#A9C8EE] bg-[#123A66]/50 px-2 py-0.5 rounded-full border border-[#123A66]">
                                 {item.pricesCount} {item.pricesCount === 1 ? 'price' : 'prices'} received
                               </span>
+                              {item.sectionId && (
+                                <span className="text-[10px] text-[#A9C8EE]/90 bg-[#123A66]/30 px-2 py-0.5 rounded-full border border-[#123A66]/60">
+                                  {DEFAULT_SECTIONS.find(s => s.id === item.sectionId)?.nameEn || item.sectionId}
+                                </span>
+                              )}
                               {!item.active && (
                                 <span className="text-[10px] text-gray-400 bg-gray-800 px-2 py-0.5 rounded-full">
                                   Inactive
@@ -869,6 +969,328 @@ export default function AdminPage() {
         )}
 
         {/* =============================================================== */}
+        {/* TAB: SHOPPING CATEGORY SECTIONS MANAGEMENT */}
+        {/* =============================================================== */}
+        {activeTab === 'sections' && (
+          <div className="space-y-6 animate-fadeIn">
+            {/* Header info */}
+            <div className="bg-[#0b1d33] border border-[#123A66] rounded-[16px] p-5 sm:p-6">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2.5">
+                  <Grid className="w-5 h-5 text-[#B22026]" />
+                  <h2 className="text-base font-medium text-white">Category Sections Management</h2>
+                </div>
+                <span className="text-xs text-[#A9C8EE] bg-[#123A66]/40 px-2.5 py-1 rounded-full border border-[#123A66]">
+                  5 Categories
+                </span>
+              </div>
+              <p className="text-xs text-[#A9C8EE] leading-relaxed">
+                Control the dynamic status of each of the five category cards displayed on the participant dashboard.
+                Changes sync in real time across all online participants.
+              </p>
+            </div>
+
+            {/* Sections List */}
+            <div className="space-y-4">
+              {sections.map((section, idx) => {
+                const isClosed = section.status === 'CLOSED';
+                const isCompleted = section.status === 'COMPLETED';
+                const isOpen = section.status === 'OPEN';
+                const sectionItemsCount = items.filter(
+                  (i) => (i.sectionId || 'supermarket') === section.id
+                ).length;
+
+                return (
+                  <div
+                    key={section.id}
+                    className="bg-[#0b1d33] border border-[#123A66] rounded-[16px] p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-200 hover:border-[#18497d]"
+                  >
+                    {/* Left: Thumbnail & Details */}
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="relative w-20 h-16 sm:w-24 sm:h-18 rounded-[12px] overflow-hidden bg-black shrink-0 border border-[#123A66] shadow">
+                        <img
+                          src={section.imageUrl}
+                          alt={section.nameEn}
+                          className="w-full h-full object-cover"
+                        />
+                        {isClosed && (
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            <Lock className="w-5 h-5 text-white/90" />
+                          </div>
+                        )}
+                        {isCompleted && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <Check className="w-6 h-6 text-emerald-400 stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-medium text-white text-sm sm:text-base truncate">
+                            #{idx + 1}. {section.nameAr}
+                          </h3>
+                          <span className="text-xs text-gray-400">
+                            ({section.nameEn})
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Status Pill */}
+                          {isOpen && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-medium uppercase tracking-wider">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                              <span>OPEN</span>
+                            </span>
+                          )}
+                          {isClosed && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#B22026]/20 text-[#B22026] border border-[#B22026]/40 text-[10px] font-medium uppercase tracking-wider">
+                              <Lock className="w-2.5 h-2.5" />
+                              <span>CLOSED</span>
+                            </span>
+                          )}
+                          {isCompleted && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#123A66] text-[#A9C8EE] border border-[#A9C8EE]/30 text-[10px] font-medium uppercase tracking-wider">
+                              <Check className="w-2.5 h-2.5 text-emerald-400" />
+                              <span>COMPLETED</span>
+                            </span>
+                          )}
+
+                          <span className="text-[11px] text-[#A9C8EE]">
+                            {sectionItemsCount} item{sectionItemsCount === 1 ? '' : 's'} assigned
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Action Buttons */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+                      {isOpen && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setStatusConfirmModal({ section, newStatus: 'CLOSED' })}
+                            className="px-3 py-1.5 rounded-lg bg-[#B22026]/20 hover:bg-[#B22026]/40 border border-[#B22026]/40 text-[#B22026] text-xs font-medium transition-colors tap-active"
+                          >
+                            Close Section
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setStatusConfirmModal({ section, newStatus: 'COMPLETED' })}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-400 text-xs font-medium transition-colors tap-active"
+                          >
+                            Mark Completed
+                          </button>
+                        </>
+                      )}
+
+                      {isClosed && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setStatusConfirmModal({ section, newStatus: 'OPEN' })}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors tap-active shadow-sm"
+                          >
+                            Reopen Section
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setStatusConfirmModal({ section, newStatus: 'COMPLETED' })}
+                            className="px-3 py-1.5 rounded-lg bg-[#123A66]/40 hover:bg-[#123A66] border border-[#123A66] text-[#A9C8EE] text-xs font-medium transition-colors tap-active"
+                          >
+                            Mark Completed
+                          </button>
+                        </>
+                      )}
+
+                      {isCompleted && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setStatusConfirmModal({ section, newStatus: 'OPEN' })}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors tap-active shadow-sm"
+                          >
+                            Reopen Section
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setStatusConfirmModal({ section, newStatus: 'CLOSED' })}
+                            className="px-3 py-1.5 rounded-lg bg-[#B22026]/20 hover:bg-[#B22026]/40 border border-[#B22026]/40 text-[#B22026] text-xs font-medium transition-colors tap-active"
+                          >
+                            Close Section
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* =============================================================== */}
+        {/* TAB: SHOPPING CATEGORY SECTIONS (5 Categories Management) */}
+        {/* =============================================================== */}
+        {activeTab === 'sections' && (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="bg-[#0b1d33] border border-[#123A66] rounded-[16px] p-5 sm:p-6">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2.5">
+                  <Grid className="w-5 h-5 text-[#B22026]" />
+                  <h2 className="text-base font-medium text-white">Shopping Category Sections</h2>
+                </div>
+                <span className="text-xs text-[#A9C8EE] bg-[#123A66]/40 px-2.5 py-1 rounded-full border border-[#123A66]">
+                  5 Active Categories
+                </span>
+              </div>
+              <p className="text-xs text-[#A9C8EE] leading-relaxed">
+                Control the real-time status of each of the five category cards displayed on the participant dashboard.
+                Changes sync across all connected users in real time.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {sections.map((section, idx) => {
+                const isClosed = section.status === 'CLOSED';
+                const isCompleted = section.status === 'COMPLETED';
+                const isOpen = section.status === 'OPEN';
+                const sectionItemsCount = items.filter(
+                  (i) => (i.sectionId || 'supermarket') === section.id
+                ).length;
+
+                return (
+                  <div
+                    key={section.id}
+                    className="bg-[#0b1d33] border border-[#123A66] rounded-[16px] p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all duration-200 hover:border-[#18497d]"
+                  >
+                    {/* Left: Thumbnail & Details */}
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="relative w-20 h-16 sm:w-24 sm:h-18 rounded-[12px] overflow-hidden bg-black shrink-0 border border-[#123A66] shadow">
+                        <img
+                          src={section.imageUrl}
+                          alt={section.nameEn}
+                          className="w-full h-full object-cover"
+                        />
+                        {isClosed && (
+                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                            <Lock className="w-5 h-5 text-white/90" />
+                          </div>
+                        )}
+                        {isCompleted && (
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <Check className="w-6 h-6 text-emerald-400 stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-medium text-white text-sm sm:text-base truncate">
+                            #{idx + 1}. {section.nameAr}
+                          </h3>
+                          <span className="text-xs text-gray-400">({section.nameEn})</span>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Status Pill */}
+                          {isOpen && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-medium uppercase tracking-wider">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                              <span>OPEN</span>
+                            </span>
+                          )}
+                          {isClosed && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#B22026]/20 text-[#B22026] border border-[#B22026]/40 text-[10px] font-medium uppercase tracking-wider">
+                              <Lock className="w-2.5 h-2.5" />
+                              <span>CLOSED</span>
+                            </span>
+                          )}
+                          {isCompleted && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#123A66] text-[#A9C8EE] border border-[#A9C8EE]/30 text-[10px] font-medium uppercase tracking-wider">
+                              <Check className="w-2.5 h-2.5 text-emerald-400" />
+                              <span>COMPLETED</span>
+                            </span>
+                          )}
+
+                          <span className="text-[11px] text-[#A9C8EE]">
+                            {sectionItemsCount} item{sectionItemsCount === 1 ? '' : 's'} assigned
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Action Buttons */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+                      {isOpen && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setStatusConfirmModal({ section, newStatus: 'CLOSED' })}
+                            className="px-3 py-1.5 rounded-lg bg-[#B22026]/20 hover:bg-[#B22026]/40 border border-[#B22026]/40 text-[#B22026] text-xs font-medium transition-colors tap-active"
+                          >
+                            Close Section
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setStatusConfirmModal({ section, newStatus: 'COMPLETED' })
+                            }
+                            className="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-400 text-xs font-medium transition-colors tap-active"
+                          >
+                            Mark as Completed
+                          </button>
+                        </>
+                      )}
+
+                      {isClosed && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setStatusConfirmModal({ section, newStatus: 'OPEN' })}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors tap-active shadow-sm"
+                          >
+                            Reopen Section
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setStatusConfirmModal({ section, newStatus: 'COMPLETED' })
+                            }
+                            className="px-3 py-1.5 rounded-lg bg-[#123A66]/40 hover:bg-[#123A66] border border-[#123A66] text-[#A9C8EE] text-xs font-medium transition-colors tap-active"
+                          >
+                            Mark as Completed
+                          </button>
+                        </>
+                      )}
+
+                      {isCompleted && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setStatusConfirmModal({ section, newStatus: 'OPEN' })}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition-colors tap-active shadow-sm"
+                          >
+                            Reopen Section
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setStatusConfirmModal({ section, newStatus: 'CLOSED' })}
+                            className="px-3 py-1.5 rounded-lg bg-[#B22026]/20 hover:bg-[#B22026]/40 border border-[#B22026]/40 text-[#B22026] text-xs font-medium transition-colors tap-active"
+                          >
+                            Close Section
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* =============================================================== */}
         {/* TAB 2: MANAGE ITEMS (Add, Edit, Delete, Photos) */}
         {/* =============================================================== */}
         {activeTab === 'items' && (
@@ -906,9 +1328,16 @@ export default function AdminPage() {
                     <div className="min-w-0">
                       <h4 className="font-medium text-white text-sm truncate">{item.name}</h4>
                       <p className="text-xs text-[#A9C8EE]/80 mt-0.5 line-clamp-1">{item.description || 'No description'}</p>
-                      <span className="text-[10px] text-gray-400 mt-1 block">
-                        {item.pricesCount} price{item.pricesCount === 1 ? '' : 's'} submitted
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        <span className="text-[10px] text-gray-400">
+                          {item.pricesCount} price{item.pricesCount === 1 ? '' : 's'} submitted
+                        </span>
+                        {item.sectionId && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-[#123A66]/60 text-[#A9C8EE] border border-[#123A66]">
+                            {DEFAULT_SECTIONS.find(s => s.id === item.sectionId)?.nameEn || item.sectionId}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -1213,6 +1642,33 @@ export default function AdminPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-medium text-gray-200 mb-1">
+                  Shopping Category / Section <span className="text-[#B22026]">*</span>
+                </label>
+                <select
+                  value={formSectionId}
+                  onChange={(e) => setFormSectionId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-[#123A66]/30 border border-[#123A66] focus:border-[#A9C8EE] rounded-[12px] text-white text-xs focus:outline-none"
+                >
+                  <option value="meat_chicken" className="bg-[#071526] text-white">
+                    لحوم وفراخ (Meat & Chicken)
+                  </option>
+                  <option value="supermarket" className="bg-[#071526] text-white">
+                    Supermarket (سوبرماركت)
+                  </option>
+                  <option value="vegetables_fruits" className="bg-[#071526] text-white">
+                    Vegetables & Fruits (خضار وفاكهة)
+                  </option>
+                  <option value="spices" className="bg-[#071526] text-white">
+                    العطارة (Spices)
+                  </option>
+                  <option value="paper_products" className="bg-[#071526] text-white">
+                    ورقيات (Paper Products)
+                  </option>
+                </select>
+              </div>
+
               {/* Image Upload Section */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -1402,6 +1858,101 @@ export default function AdminPage() {
                 className="px-4 py-2 bg-[#B22026] hover:bg-[#c9252c] text-white text-xs font-medium rounded-[10px]"
               >
                 Delete Permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =============================================================== */}
+      {/* MODAL: SECTION STATUS CONFIRMATION */}
+      {/* =============================================================== */}
+      {statusConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-sm bg-brand-black border border-[#123A66] rounded-[20px] p-6 shadow-2xl text-white">
+            <div className="flex items-start gap-3">
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                  statusConfirmModal.newStatus === 'CLOSED'
+                    ? 'bg-[#B22026]/20 text-[#B22026] border border-[#B22026]/30'
+                    : statusConfirmModal.newStatus === 'COMPLETED'
+                    ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-[#123A66]/50 text-[#A9C8EE] border border-[#123A66]'
+                }`}
+              >
+                {statusConfirmModal.newStatus === 'CLOSED' ? (
+                  <Lock className="w-5 h-5" />
+                ) : statusConfirmModal.newStatus === 'COMPLETED' ? (
+                  <CheckCircle2 className="w-5 h-5" />
+                ) : (
+                  <RefreshCw className="w-5 h-5" />
+                )}
+              </div>
+              <div>
+                <h3 className="font-semibold text-base text-white">
+                  {statusConfirmModal.newStatus === 'CLOSED'
+                    ? 'Close Section?'
+                    : statusConfirmModal.newStatus === 'COMPLETED'
+                    ? 'Mark Section as Completed?'
+                    : 'Reopen Section?'}
+                </h3>
+                <p className="text-xs text-[#A9C8EE] font-medium mt-0.5">
+                  {statusConfirmModal.section.nameAr} &bull; {statusConfirmModal.section.nameEn}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#A9C8EE]/90 mt-4 leading-relaxed bg-[#071526] p-3 rounded-[12px] border border-[#123A66]">
+              {statusConfirmModal.newStatus === 'CLOSED' && (
+                <>
+                  Users will see this section as <strong>closed with a lock badge</strong>. Further price submissions for all items in this section will be immediately blocked.
+                </>
+              )}
+              {statusConfirmModal.newStatus === 'COMPLETED' && (
+                <>
+                  Users will see this section as <strong>completed with a checkmark</strong>. Submissions will be closed and appreciation feedback will be displayed.
+                </>
+              )}
+              {statusConfirmModal.newStatus === 'OPEN' && (
+                <>
+                  This section will be made <strong>active and open</strong>. Users will be able to browse items and submit price quotes again immediately.
+                </>
+              )}
+            </p>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={isUpdatingSection}
+                onClick={() => setStatusConfirmModal(null)}
+                className="px-3.5 py-2 text-xs text-gray-300 hover:text-white rounded-[10px] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isUpdatingSection}
+                onClick={handleConfirmStatusChange}
+                className={`px-4 py-2 text-white text-xs font-medium rounded-[10px] transition-all flex items-center gap-1.5 shadow-md ${
+                  statusConfirmModal.newStatus === 'CLOSED'
+                    ? 'bg-[#B22026] hover:bg-[#c9252c]'
+                    : statusConfirmModal.newStatus === 'COMPLETED'
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+              >
+                {isUpdatingSection ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Updating...</span>
+                  </>
+                ) : statusConfirmModal.newStatus === 'CLOSED' ? (
+                  'Close Section'
+                ) : statusConfirmModal.newStatus === 'COMPLETED' ? (
+                  'Mark Completed'
+                ) : (
+                  'Reopen Section'
+                )}
               </button>
             </div>
           </div>

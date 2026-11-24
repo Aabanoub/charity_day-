@@ -6,11 +6,24 @@ export interface UserProfile {
   createdAt?: string;
 }
 
+export type SectionStatus = 'OPEN' | 'CLOSED' | 'COMPLETED';
+
+export interface Section {
+  id: string; // 'meat_chicken' | 'supermarket' | 'vegetables_fruits' | 'spices' | 'paper_products'
+  nameEn: string;
+  nameAr: string;
+  imageUrl: string;
+  status: SectionStatus;
+  displayOrder: number;
+  updatedAt?: string;
+}
+
 export interface Item {
   id: string;
   name: string;
   photoUrl: string;
   description?: string;
+  sectionId?: string; // Links to Section.id
   active?: boolean;
   orderIndex?: number;
   createdAt?: string;
@@ -51,6 +64,7 @@ export interface AdminItemSummary {
   name: string;
   photoUrl: string;
   description?: string;
+  sectionId?: string;
   active: boolean;
   lowestPrice: number | null;
   pricesCount: number;
@@ -66,7 +80,6 @@ export interface AdminItemSummary {
     submittedAt: string;
   }>;
 }
-
 
 export interface SiteStatusSettings {
   isClosed: boolean;

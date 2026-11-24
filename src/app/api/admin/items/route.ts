@@ -57,6 +57,7 @@ export async function GET(request: Request) {
             name: item.name,
             photoUrl: item.photo_url,
             description: item.description,
+            sectionId: item.section_id || 'supermarket',
             active: item.active,
             lowestPrice: lowest ? lowest.price : null,
             pricesCount: itemSubs.length,
@@ -102,6 +103,7 @@ export async function GET(request: Request) {
         name: item.name,
         photoUrl: item.photoUrl,
         description: item.description,
+        sectionId: item.sectionId || 'supermarket',
         active: item.active !== false,
         lowestPrice: lowest ? lowest.price : null,
         pricesCount: itemSubs.length,
@@ -132,7 +134,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { name, photoUrl, description } = await request.json();
+    const { name, photoUrl, description, sectionId } = await request.json();
 
     if (!name || !photoUrl) {
       return NextResponse.json({ error: 'Name and photo URL are required' }, { status: 400 });
@@ -147,6 +149,7 @@ export async function POST(request: Request) {
           name: name.trim(),
           photo_url: photoUrl.trim(),
           description: (description || '').trim(),
+          section_id: sectionId || 'supermarket',
           active: true,
           order_index: Date.now() % 100000,
         })
@@ -163,6 +166,7 @@ export async function POST(request: Request) {
             name: data.name,
             photoUrl: data.photo_url,
             description: data.description,
+            sectionId: data.section_id,
             active: data.active,
           },
         });
@@ -174,6 +178,7 @@ export async function POST(request: Request) {
       name: name.trim(),
       photoUrl: photoUrl.trim(),
       description: (description || '').trim(),
+      sectionId: sectionId || 'supermarket',
       active: true,
       orderIndex: inMemoryStore.items.length + 1,
     };
@@ -193,7 +198,7 @@ export async function PUT(request: Request) {
   }
 
   try {
-    const { id, name, photoUrl, description, active } = await request.json();
+    const { id, name, photoUrl, description, sectionId, active } = await request.json();
 
     if (!id || !name || !photoUrl) {
       return NextResponse.json({ error: 'ID, name, and photo URL are required' }, { status: 400 });
@@ -202,15 +207,20 @@ export async function PUT(request: Request) {
     const supabase = getServerSupabase();
 
     if (supabase) {
+      const updateData: Record<string, any> = {
+        name: name.trim(),
+        photo_url: photoUrl.trim(),
+        description: (description || '').trim(),
+        active: active !== undefined ? active : true,
+        updated_at: new Date().toISOString(),
+      };
+      if (sectionId) {
+        updateData.section_id = sectionId;
+      }
+
       const { data, error } = await supabase
         .from('mtd_items')
-        .update({
-          name: name.trim(),
-          photo_url: photoUrl.trim(),
-          description: (description || '').trim(),
-          active: active !== undefined ? active : true,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
@@ -225,6 +235,7 @@ export async function PUT(request: Request) {
             name: data.name,
             photoUrl: data.photo_url,
             description: data.description,
+            sectionId: data.section_id,
             active: data.active,
           },
         });
@@ -238,6 +249,7 @@ export async function PUT(request: Request) {
         name: name.trim(),
         photoUrl: photoUrl.trim(),
         description: (description || '').trim(),
+        sectionId: sectionId || inMemoryStore.items[index].sectionId || 'supermarket',
         active: active !== undefined ? active : inMemoryStore.items[index].active,
       };
       return NextResponse.json({ success: true, item: inMemoryStore.items[index] });

@@ -2,111 +2,128 @@
 
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
-import SurveyModal from '@/components/SurveyModal';
-import ItemCard from '@/components/ItemCard';
 import ProgressBar from '@/components/ProgressBar';
+import ItemCard from '@/components/ItemCard';
+import SurveyModal from '@/components/SurveyModal';
 import ThankYouScreen from '@/components/ThankYouScreen';
 import AnnouncementPopup from '@/components/AnnouncementPopup';
 import SiteClosureOverlay from '@/components/SiteClosureOverlay';
-import SkeletonCard from '@/components/SkeletonCard';
-import { Item, PriceSubmission, UserProfile, SiteStatusSettings } from '@/lib/types';
+import CategoryDashboard from '@/components/CategoryDashboard';
+import { Item, PriceSubmission, UserProfile, SiteStatusSettings, Section } from '@/lib/types';
+import { DEFAULT_SECTIONS } from '@/lib/constants';
 import { getSupabase } from '@/lib/supabase';
-import { Heart, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
+import { Heart, Sparkles, AlertCircle, RefreshCw, ArrowLeft, Layers } from 'lucide-react';
 
-export default function HomePage() {
+function SkeletonCard() {
+  return (
+    <div className="bg-[#0b1d33] border border-[#123A66] rounded-[16px] p-4 space-y-4">
+      <div className="w-full aspect-video rounded-[12px] bg-[#123A66]/30 animate-pulse" />
+      <div className="h-5 bg-[#123A66]/40 rounded w-3/4 animate-pulse" />
+      <div className="h-4 bg-[#123A66]/30 rounded w-1/2 animate-pulse" />
+      <div className="h-10 bg-[#123A66]/20 rounded-lg animate-pulse" />
+    </div>
+  );
+}
+
+export default function Home() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isSurveyOpen, setIsSurveyOpen] = useState<boolean>(false);
-  const [isSurveyGated, setIsSurveyGated] = useState<boolean>(true); // Strictly blocks items until profile loaded
+  const [isSurveyOpen, setIsSurveyOpen] = useState(false);
+  const [isSurveyGated, setIsSurveyGated] = useState(true);
+
+  // Items & submissions state
   const [items, setItems] = useState<Item[]>([]);
   const [submissions, setSubmissions] = useState<Map<string, PriceSubmission>>(new Map());
-  const [isLoadingItems, setIsLoadingItems] = useState<boolean>(true);
+  const [isLoadingItems, setIsLoadingItems] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [showThankYouBanner, setShowThankYouBanner] = useState<boolean>(true);
+
+  // Sections state (The 5 Image-Only Categories)
+  const [sections, setSections] = useState<Section[]>(DEFAULT_SECTIONS);
+  const [selectedSection, setSelectedSection] = useState<Section | null>(null);
+  const [isLoadingSections, setIsLoadingSections] = useState(true);
+
+  // Site Closure state
   const [siteStatus, setSiteStatus] = useState<SiteStatusSettings | null>(null);
 
-  // Check and sync site closure status in real-time
-  const checkSiteStatus = async () => {
+  // Thank you banner control
+  const [showThankYouBanner, setShowThankYouBanner] = useState(true);
+
+  // 1. Initial Profile & Site Status Load
+  useEffect(() => {
+    // Check saved profile
     try {
-      const res = await fetch('/api/settings', { cache: 'no-store' });
+      const saved = localStorage.getItem('mtd_user_profile');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.id && parsed.fullName) {
+          setUserProfile(parsed);
+          setIsSurveyGated(false);
+        }
+      }
+    } catch (e) {
+      console.error('Failed reading user profile from localStorage', e);
+    }
+
+    // Check Site Status
+    const checkSiteStatus = async () => {
+      try {
+        const res = await fetch('/api/settings', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.settings) {
+            setSiteStatus(data.settings);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching site status:', err);
+      }
+    };
+    checkSiteStatus();
+
+    // Fetch Category Sections
+    loadSections();
+  }, []);
+
+  // Fetch sections
+  const loadSections = async () => {
+    try {
+      setIsLoadingSections(true);
+      const res = await fetch('/api/sections', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
-        if (data.settings) {
-          setSiteStatus(data.settings);
+        if (data.sections && data.sections.length > 0) {
+          setSections(data.sections);
+
+          // Update active selected section if it exists
+          if (selectedSection) {
+            const updatedActive = data.sections.find((s: Section) => s.id === selectedSection.id);
+            if (updatedActive) {
+              setSelectedSection(updatedActive);
+            }
+          }
         }
       }
     } catch (err) {
-      console.warn('Could not check site status:', err);
+      console.error('Error loading sections:', err);
+    } finally {
+      setIsLoadingSections(false);
     }
   };
 
-  useEffect(() => {
-    checkSiteStatus();
-
-    const supabase = getSupabase();
-    let channel: any = null;
-
-    if (supabase) {
-      channel = supabase
-        .channel('mtd_realtime_page_site_status')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'mtd_settings' },
-          (payload: any) => {
-            if (payload.new && payload.new.key === 'site_status' && payload.new.value) {
-              setSiteStatus(payload.new.value as SiteStatusSettings);
-            } else {
-              checkSiteStatus();
-            }
-          }
-        )
-        .subscribe();
-    }
-
-    const interval = setInterval(checkSiteStatus, 3000);
-    return () => {
-      clearInterval(interval);
-      if (channel && supabase) {
-        supabase.removeChannel(channel);
-      }
-    };
-  }, []);
-
-  // 1. Initial Device Check: Read survey profile from localStorage
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('mtd_user_profile');
-      if (stored) {
-        const parsed: UserProfile = JSON.parse(stored);
-        if (parsed.fullName && parsed.phoneNumber && parsed.className) {
-          setUserProfile(parsed);
-          setIsSurveyOpen(false);
-          setIsSurveyGated(false); // Unlocks items!
-        } else {
-          setIsSurveyOpen(true);
-          setIsSurveyGated(true);
-        }
-      } else {
-        // First visit: Survey blocks the page
-        setIsSurveyOpen(true);
-        setIsSurveyGated(true);
-      }
-    } catch {
-      setIsSurveyOpen(true);
-      setIsSurveyGated(true);
-    }
-  }, []);
-
-  // 2. Fetch items ONLY when survey is verified/completed
+  // 2. Fetch live items from database
   const loadItems = async () => {
-    setIsLoadingItems(true);
-    setFetchError(null);
     try {
+      setIsLoadingItems(true);
+      setFetchError(null);
       const res = await fetch('/api/items', { cache: 'no-store' });
-      if (!res.ok) throw new Error('Failed to load charity items');
+
+      if (!res.ok) {
+        throw new Error('Could not load catalogue items');
+      }
+
       const data = await res.json();
       setItems(data.items || []);
     } catch (err: any) {
-      console.error('Error fetching items:', err);
+      console.error('Error loading items:', err);
       setFetchError(err.message || 'Could not connect to item catalogue');
     } finally {
       setIsLoadingItems(false);
@@ -134,17 +151,19 @@ export default function HomePage() {
     if (userProfile && !isSurveyGated) {
       loadItems();
       loadUserSubmissions(userProfile.id);
+      loadSections();
     }
   }, [userProfile, isSurveyGated]);
 
-  // Realtime subscription for live item catalog updates from database
+  // Realtime subscription for live item catalog and section status updates
   useEffect(() => {
     if (!userProfile || isSurveyGated) return;
 
     const supabase = getSupabase();
     if (!supabase) return;
 
-    const channel = supabase
+    // Items channel
+    const itemsChannel = supabase
       .channel('mtd_realtime_items_sync')
       .on(
         'postgres_changes',
@@ -155,8 +174,52 @@ export default function HomePage() {
       )
       .subscribe();
 
+    // Sections channel (Realtime status sync across all connected users!)
+    const sectionsChannel = supabase
+      .channel('mtd_realtime_sections_sync')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'mtd_sections' },
+        (payload: any) => {
+          if (payload.new && payload.new.id) {
+            setSections((prev) =>
+              prev.map((sec) =>
+                sec.id === payload.new.id
+                  ? {
+                      ...sec,
+                      status: payload.new.status,
+                      updatedAt: payload.new.updated_at,
+                    }
+                  : sec
+              )
+            );
+
+            // Handle user inside a section that gets closed or completed
+            setSelectedSection((currentActive) => {
+              if (currentActive && currentActive.id === payload.new.id) {
+                if (payload.new.status !== 'OPEN') {
+                  // Replaced or closed while inside
+                  alert(
+                    payload.new.status === 'COMPLETED'
+                      ? 'Thank you! This section is completed. We appreciate your contribution ❤️'
+                      : 'Thank you! This section is currently closed.'
+                  );
+                  return null; // Return back to Category Dashboard
+                }
+                return { ...currentActive, status: payload.new.status };
+              }
+              return currentActive;
+            });
+          } else {
+            loadSections();
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(itemsChannel);
+      supabase.removeChannel(sectionsChannel);
     };
   }, [userProfile, isSurveyGated]);
 
@@ -166,6 +229,7 @@ export default function HomePage() {
       if (document.visibilityState === 'visible' && userProfile && !isSurveyGated) {
         loadItems();
         loadUserSubmissions(userProfile.id);
+        loadSections();
       }
     };
 
@@ -203,7 +267,14 @@ export default function HomePage() {
         }),
       });
 
-      if (!res.ok) return false;
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        if (res.status === 403 && errorData.error) {
+          alert(errorData.error);
+          setSelectedSection(null); // Return to dashboard
+        }
+        return false;
+      }
 
       const data = await res.json();
       if (data.success && data.submission) {
@@ -221,12 +292,21 @@ export default function HomePage() {
     }
   };
 
-  // Calculate completed count
-  const completedCount = items.filter((item) => submissions.has(item.id)).length;
-  const totalCount = items.length;
-  const isFinishedAll = totalCount > 0 && completedCount >= totalCount;
+  // Filter items for active section if selected
+  const activeSectionItems = selectedSection
+    ? items.filter((item) => (item.sectionId || 'supermarket') === selectedSection.id)
+    : items;
 
-  // 1. ABSOLUTE TOP PRIORITY: If the website is closed by the admin, block everything!
+  // Counts
+  const totalCount = items.length;
+  const completedCount = items.filter((i) => submissions.has(i.id)).length;
+  const isFinishedAll = totalCount > 0 && completedCount === totalCount;
+
+  // Section specific counts
+  const sectionTotalCount = activeSectionItems.length;
+  const sectionCompletedCount = activeSectionItems.filter((i) => submissions.has(i.id)).length;
+
+  // 1. ABSOLUTE TOP PRIORITY: If site is closed, render closure overlay only
   if (siteStatus?.isClosed) {
     return (
       <main className="min-h-screen bg-brand-black flex flex-col justify-center items-center p-4">
@@ -323,35 +403,81 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Item Cards List */}
-        <section aria-label="Charity Items Catalogue" className="space-y-6">
-          {isLoadingItems ? (
-            // Skeleton loaders
-            Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
-          ) : items.length === 0 ? (
-            // Empty State
-            <div className="text-center py-16 px-4 border border-[#123A66]/50 rounded-[16px] bg-[#0b1d33]/40">
-              <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-[#123A66]/50 flex items-center justify-center text-[#A9C8EE]">
-                <Heart className="w-7 h-7" />
+        {/* =============================================================== */}
+        {/* VIEW 1: PREMIUM FIVE-CATEGORY IMAGE-ONLY DASHBOARD */}
+        {/* =============================================================== */}
+        {!selectedSection ? (
+          <section aria-label="Shopping Categories" className="space-y-4">
+            <CategoryDashboard
+              sections={sections}
+              isLoading={isLoadingSections}
+              onSelectSection={(section) => {
+                setSelectedSection(section);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+          </section>
+        ) : (
+          /* =============================================================== */
+          /* VIEW 2: CATEGORY ITEMS VIEW (Entered into an OPEN section) */
+          /* =============================================================== */
+          <section aria-label="Category Items" className="space-y-5 animate-fadeIn">
+            {/* Top Navigation Bar inside Category */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#123A66]/50">
+              <button
+                type="button"
+                onClick={() => setSelectedSection(null)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#123A66]/30 border border-[#123A66] hover:bg-[#123A66] text-xs text-[#A9C8EE] hover:text-white transition-colors duration-200 tap-active"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>All Categories</span>
+              </button>
+
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-gray-400">
+                  {sectionCompletedCount} of {sectionTotalCount} priced
+                </span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               </div>
-              <h3 className="text-lg font-medium text-white">No Items Available Yet</h3>
-              <p className="text-xs text-[#A9C8EE] mt-1 max-w-xs mx-auto">
-                Items will appear here shortly as the organizers upload them. Check back in a moment!
-              </p>
             </div>
-          ) : (
-            // Render Items
-            items.map((item, index) => (
-              <ItemCard
-                key={item.id}
-                item={item}
-                index={index}
-                userSubmission={submissions.get(item.id)}
-                onSavePrice={handleSavePrice}
-              />
-            ))
-          )}
-        </section>
+
+            {/* Item Cards in this Category */}
+            <div className="space-y-6">
+              {isLoadingItems ? (
+                Array.from({ length: 2 }).map((_, i) => <SkeletonCard key={i} />)
+              ) : activeSectionItems.length === 0 ? (
+                /* Empty Category State */
+                <div className="text-center py-16 px-4 border border-[#123A66]/50 rounded-[16px] bg-[#0b1d33]/40 space-y-3">
+                  <div className="w-14 h-14 mx-auto rounded-full bg-[#123A66]/50 flex items-center justify-center text-[#A9C8EE]">
+                    <Layers className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-base font-medium text-white">No Items in this Category Yet</h3>
+                  <p className="text-xs text-[#A9C8EE] max-w-xs mx-auto">
+                    Items will appear here once added by organizers. Feel free to explore other categories!
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSection(null)}
+                    className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#B22026] hover:bg-[#c9252c] text-white text-xs font-medium transition-colors"
+                  >
+                    <span>View Other Categories</span>
+                  </button>
+                </div>
+              ) : (
+                /* Render Items */
+                activeSectionItems.map((item, index) => (
+                  <ItemCard
+                    key={item.id}
+                    item={item}
+                    index={index}
+                    userSubmission={submissions.get(item.id)}
+                    onSavePrice={handleSavePrice}
+                  />
+                ))
+              )}
+            </div>
+          </section>
+        )}
       </main>
 
       {/* Footer */}
