@@ -243,7 +243,7 @@ export default function HomePage() {
               <Sparkles className="w-4 h-4 text-[#A9C8EE]" />
             </h2>
             <p className="text-xs text-[#A9C8EE] font-normal leading-relaxed">
-              Help us find the lowest prices! Enter prices and store info to help make their day.
+              Submit your price for each item.
             </p>
           </div>
           <div className="shrink-0 ml-3">
@@ -309,9 +309,6 @@ export default function HomePage() {
             <span>Make Their Day &copy; {new Date().getFullYear()}</span>
             <span>•</span>
             <span className="text-[#B22026] font-medium">Warmth, Caring & Trust</span>
-          </p>
-          <p className="text-[11px] text-gray-500">
-            One price per device. Newer prices replace older prices automatically.
           </p>
         </div>
       </footer>

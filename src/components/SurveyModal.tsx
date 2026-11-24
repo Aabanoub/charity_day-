@@ -2,10 +2,9 @@
 
 import React, { useState } from 'react';
 import Logo from './Logo';
-import { CLASS_OPTIONS } from '@/lib/constants';
 import { validatePhoneNumber, generateId } from '@/lib/utils';
 import { UserProfile } from '@/lib/types';
-import { User, Phone, GraduationCap, ArrowRight, AlertCircle, Heart } from 'lucide-react';
+import { User, Phone, GraduationCap, ArrowRight, AlertCircle } from 'lucide-react';
 
 interface SurveyModalProps {
   onComplete: (user: UserProfile) => void;
@@ -16,9 +15,10 @@ interface SurveyModalProps {
 export default function SurveyModal({ onComplete, initialProfile, isOpen }: SurveyModalProps) {
   const [fullName, setFullName] = useState(initialProfile?.fullName || '');
   const [phoneNumber, setPhoneNumber] = useState(initialProfile?.phoneNumber || '');
-  const [className, setClassName] = useState(initialProfile?.className || CLASS_OPTIONS[0]);
+  const [className, setClassName] = useState(initialProfile?.className || '');
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [classError, setClassError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
@@ -53,6 +53,14 @@ export default function SurveyModal({ onComplete, initialProfile, isOpen }: Surv
       hasError = true;
     } else {
       setPhoneError(null);
+    }
+
+    // Validate Class
+    if (!className.trim()) {
+      setClassError('Please enter your class');
+      hasError = true;
+    } else {
+      setClassError(null);
     }
 
     if (hasError) return;
@@ -175,41 +183,36 @@ export default function SurveyModal({ onComplete, initialProfile, isOpen }: Surv
             )}
           </div>
 
-          {/* Class Dropdown */}
+          {/* Class Text Input */}
           <div>
             <label htmlFor="className" className="block text-xs font-medium text-gray-200 mb-1.5">
-              Class / Group <span className="text-[#B22026]">*</span>
+              Class <span className="text-[#B22026]">*</span>
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[#A9C8EE]/70">
                 <GraduationCap className="w-4 h-4" />
               </div>
-              <select
+              <input
                 id="className"
+                type="text"
+                required
                 value={className}
-                onChange={(e) => setClassName(e.target.value)}
-                className="w-full pl-10 pr-8 py-3 bg-[#0d2745] border border-[#123A66] focus:border-[#A9C8EE] rounded-[12px] text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#A9C8EE] transition-all duration-200 appearance-none cursor-pointer"
-              >
-                {CLASS_OPTIONS.map((opt) => (
-                  <option key={opt} value={opt} className="bg-[#0b1f36] text-white">
-                    {opt}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-[#A9C8EE]/70">
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-              </div>
+                onChange={(e) => {
+                  setClassName(e.target.value);
+                  if (classError) setClassError(null);
+                }}
+                placeholder="e.g. 10A, Year 11, or Room 4"
+                className={`w-full pl-10 pr-4 py-3 bg-[#123A66]/30 border ${
+                  classError ? 'border-[#B22026]' : 'border-[#123A66] focus:border-[#A9C8EE]'
+                } rounded-[12px] text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-[#A9C8EE] transition-all duration-200`}
+              />
             </div>
-          </div>
-
-          {/* Privacy Note */}
-          <div className="pt-1 flex items-start gap-2 text-[11px] text-[#A9C8EE]/80 leading-normal">
-            <Heart className="w-3.5 h-3.5 text-[#B22026] shrink-0 mt-0.5 fill-current" />
-            <span>
-              Your information is private and will never be shown to other users. Saved once for this device.
-            </span>
+            {classError && (
+              <p className="flex items-center gap-1 text-[#B22026] text-xs mt-1.5">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                {classError}
+              </p>
+            )}
           </div>
 
           {/* Main Action Button - Brand Red */}

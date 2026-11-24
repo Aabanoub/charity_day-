@@ -12,7 +12,6 @@ import {
   Plus,
   Edit,
   Trash2,
-  Download,
   Search,
   Filter,
   Send,
@@ -678,30 +677,27 @@ export default function AdminPage() {
                   className="bg-[#0d2745] border border-[#123A66] text-xs text-white rounded-[10px] px-3 py-2 focus:outline-none focus:border-[#A9C8EE]"
                 >
                   <option value="ALL">All Classes</option>
-                  {CLASS_OPTIONS.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
+                  {Array.from(
+                    new Set([
+                      ...CLASS_OPTIONS,
+                      ...items.flatMap((i) => i.allSubmissions.map((s) => s.userClass).filter(Boolean)),
+                    ])
+                  )
+                    .sort()
+                    .map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
                 </select>
-
-                {/* Export to CSV Button */}
-                <a
-                  href={`/api/admin/export?class=${encodeURIComponent(selectedClassFilter)}`}
-                  download
-                  className="flex items-center gap-1.5 px-3 py-2 bg-[#B22026] hover:bg-[#c9252c] text-white text-xs font-medium rounded-[10px] transition-colors duration-200 tap-active shadow-md shrink-0"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Export CSV</span>
-                </a>
 
                 {/* PDF Sheet Report Button */}
                 <button
                   type="button"
                   onClick={() => setReportModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-[#123A66] hover:bg-[#18497d] border border-[#A9C8EE]/40 text-white text-xs font-medium rounded-[10px] transition-colors duration-200 tap-active shadow-md shrink-0"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-[#B22026] hover:bg-[#c9252c] text-white text-xs font-medium rounded-[10px] transition-colors duration-200 tap-active shadow-md shrink-0"
                 >
-                  <FileText className="w-3.5 h-3.5 text-[#A9C8EE]" />
+                  <FileText className="w-3.5 h-3.5" />
                   <span>PDF Sheet</span>
                 </button>
               </div>
@@ -958,7 +954,7 @@ export default function AdminPage() {
                 <span>Send Pop-up Message to All Users</span>
               </h2>
               <p className="text-xs text-[#A9C8EE] mt-1 mb-4 leading-relaxed">
-                This message will immediately appear as an interactive modal pop-up on all active users&apos; screens with a &ldquo;Got it&rdquo; button.
+                This message will immediately appear as an interactive modal pop-up on all active users&apos; screens.
               </p>
 
               <form onSubmit={handleBroadcastMessage} className="space-y-3.5">
@@ -1105,7 +1101,7 @@ export default function AdminPage() {
                   <span>Customize the Closure Popup Message</span>
                 </h3>
                 <p className="text-xs text-[#A9C8EE]/80">
-                  When the website is closed, visitors will see a full-screen pop-up with your custom message and the Heart Handshake logo.
+                  When the website is closed, visitors will see a full-screen pop-up with your custom message.
                 </p>
 
                 <div className="space-y-3">

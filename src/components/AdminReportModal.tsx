@@ -121,11 +121,18 @@ export default function AdminReportModal({
               className="bg-[#0d2745] border border-[#123A66] text-xs text-white rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#A9C8EE]"
             >
               <option value="ALL">All Classes</option>
-              {CLASS_OPTIONS.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
+              {Array.from(
+                new Set([
+                  ...CLASS_OPTIONS,
+                  ...items.flatMap((i) => i.allSubmissions.map((s) => s.userClass).filter(Boolean)),
+                ])
+              )
+                .sort()
+                .map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
             </select>
 
             {/* Print / Save PDF Button */}
