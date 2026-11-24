@@ -171,14 +171,10 @@ export default function SurveyModal({ onComplete, initialProfile, isOpen }: Surv
                 } rounded-[12px] text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-[#A9C8EE] transition-all duration-200`}
               />
             </div>
-            {phoneError ? (
+            {phoneError && (
               <p className="flex items-center gap-1 text-[#B22026] text-xs mt-1.5">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 {phoneError}
-              </p>
-            ) : (
-              <p className="text-[11px] text-[#A9C8EE]/70 mt-1">
-                Required for the organizer to contact price winners.
               </p>
             )}
           </div>
@@ -201,7 +197,6 @@ export default function SurveyModal({ onComplete, initialProfile, isOpen }: Surv
                   setClassName(e.target.value);
                   if (classError) setClassError(null);
                 }}
-                placeholder="e.g. 10A, Year 11, or Room 4"
                 className={`w-full pl-10 pr-4 py-3 bg-[#123A66]/30 border ${
                   classError ? 'border-[#B22026]' : 'border-[#123A66] focus:border-[#A9C8EE]'
                 } rounded-[12px] text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-1 focus:ring-[#A9C8EE] transition-all duration-200`}
