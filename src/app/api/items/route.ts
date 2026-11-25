@@ -17,7 +17,7 @@ export async function GET() {
     if (supabase) {
       const { data, error } = await supabase
         .from('mtd_items')
-        .select('id, name, photo_url, description, section_id, active, order_index, created_at')
+        .select('id, name, photo_url, description, section_id, unit, active, order_index, created_at')
         .eq('active', true)
         .order('order_index', { ascending: true });
 
@@ -35,6 +35,7 @@ export async function GET() {
         photoUrl: item.photo_url,
         description: item.description,
         sectionId: item.section_id || 'supermarket',
+        unit: item.unit || '1 piece',
         orderIndex: item.order_index,
       }));
 

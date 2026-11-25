@@ -58,6 +58,7 @@ export async function GET(request: Request) {
             photoUrl: item.photo_url,
             description: item.description,
             sectionId: item.section_id || 'supermarket',
+            unit: item.unit || '1 piece',
             active: item.active,
             lowestPrice: lowest ? lowest.price : null,
             pricesCount: itemSubs.length,
@@ -104,6 +105,7 @@ export async function GET(request: Request) {
         photoUrl: item.photoUrl,
         description: item.description,
         sectionId: item.sectionId || 'supermarket',
+        unit: item.unit || '1 piece',
         active: item.active !== false,
         lowestPrice: lowest ? lowest.price : null,
         pricesCount: itemSubs.length,
@@ -134,7 +136,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { name, photoUrl, description, sectionId } = await request.json();
+    const { name, photoUrl, description, sectionId, unit } = await request.json();
 
     if (!name || !photoUrl) {
       return NextResponse.json({ error: 'Name and photo URL are required' }, { status: 400 });
@@ -150,6 +152,7 @@ export async function POST(request: Request) {
           photo_url: photoUrl.trim(),
           description: (description || '').trim(),
           section_id: sectionId || 'supermarket',
+          unit: (unit || '1 piece').trim(),
           active: true,
           order_index: Date.now() % 100000,
         })
@@ -167,6 +170,7 @@ export async function POST(request: Request) {
             photoUrl: data.photo_url,
             description: data.description,
             sectionId: data.section_id,
+            unit: data.unit,
             active: data.active,
           },
         });
@@ -179,6 +183,7 @@ export async function POST(request: Request) {
       photoUrl: photoUrl.trim(),
       description: (description || '').trim(),
       sectionId: sectionId || 'supermarket',
+      unit: (unit || '1 piece').trim(),
       active: true,
       orderIndex: inMemoryStore.items.length + 1,
     };
@@ -198,7 +203,7 @@ export async function PUT(request: Request) {
   }
 
   try {
-    const { id, name, photoUrl, description, sectionId, active } = await request.json();
+    const { id, name, photoUrl, description, sectionId, unit, active } = await request.json();
 
     if (!id || !name || !photoUrl) {
       return NextResponse.json({ error: 'ID, name, and photo URL are required' }, { status: 400 });
@@ -216,6 +221,9 @@ export async function PUT(request: Request) {
       };
       if (sectionId) {
         updateData.section_id = sectionId;
+      }
+      if (unit !== undefined) {
+        updateData.unit = (unit || '1 piece').trim();
       }
 
       const { data, error } = await supabase
@@ -236,6 +244,7 @@ export async function PUT(request: Request) {
             photoUrl: data.photo_url,
             description: data.description,
             sectionId: data.section_id,
+            unit: data.unit,
             active: data.active,
           },
         });
@@ -250,6 +259,7 @@ export async function PUT(request: Request) {
         photoUrl: photoUrl.trim(),
         description: (description || '').trim(),
         sectionId: sectionId || inMemoryStore.items[index].sectionId || 'supermarket',
+        unit: unit !== undefined ? unit.trim() : (inMemoryStore.items[index].unit || '1 piece'),
         active: active !== undefined ? active : inMemoryStore.items[index].active,
       };
       return NextResponse.json({ success: true, item: inMemoryStore.items[index] });

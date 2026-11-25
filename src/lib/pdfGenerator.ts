@@ -161,8 +161,8 @@ export function generatePdfReport(
     currentY += 3;
 
     const summaryRows = displayItems.map((item, idx) => [
-      `${idx + 1}. ${item.name}`,
-      item.lowest ? `$${item.lowest.price.toFixed(2)}` : '—',
+      `${idx + 1}. ${item.name}${item.unit ? ` (${item.unit})` : ''}`,
+      item.lowest ? `$${item.lowest.price.toFixed(2)}${item.unit ? ` / ${item.unit}` : ''}` : '—',
       item.lowest ? item.lowest.userName : 'No prices',
       item.lowest ? item.lowest.userClass : '—',
       item.lowest ? item.lowest.userPhone : '—',
@@ -251,19 +251,19 @@ export function generatePdfReport(
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.setTextColor(17, 24, 39);
-      doc.text(`#${itemIdx + 1}. ${item.name}`, margin + 3, currentY + 4.8);
+      doc.text(`#${itemIdx + 1}. ${item.name}${item.unit ? ` (${item.unit})` : ''}`, margin + 3, currentY + 4.8);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       doc.setTextColor(18, 58, 102);
-      doc.text(`(${quotesCount} quote${quotesCount === 1 ? '' : 's'})`, margin + 55, currentY + 4.8);
+      doc.text(`(${quotesCount} quote${quotesCount === 1 ? '' : 's'})`, margin + 65, currentY + 4.8);
 
       if (lowestQuote) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.5);
         doc.setTextColor(16, 149, 74);
         doc.text(
-          `Lowest: $${lowestQuote.price.toFixed(2)} by ${lowestQuote.userName} (${lowestQuote.userPhone})`,
+          `Lowest: $${lowestQuote.price.toFixed(2)}${item.unit ? ` / ${item.unit}` : ''} by ${lowestQuote.userName} (${lowestQuote.userPhone})`,
           pageWidth - margin - 3,
           currentY + 4.8,
           { align: 'right' }
@@ -289,7 +289,7 @@ export function generatePdfReport(
           const isLowest = sIdx === 0;
           return [
             isLowest ? '★ LOWEST PRICE' : `Quote #${sIdx + 1}`,
-            `$${sub.price.toFixed(2)}`,
+            `$${sub.price.toFixed(2)}${item.unit ? ` / ${item.unit}` : ''}`,
             sub.userName,
             sub.userClass || '—',
             sub.userPhone || '—',

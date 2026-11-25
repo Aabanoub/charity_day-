@@ -90,6 +90,7 @@ export default function AdminPage() {
   const [formPhotoUrl, setFormPhotoUrl] = useState<string>('');
   const [formDescription, setFormDescription] = useState<string>('');
   const [formSectionId, setFormSectionId] = useState<string>('supermarket');
+  const [formUnit, setFormUnit] = useState<string>('1 kg');
   const [formActive, setFormActive] = useState<boolean>(true);
   const [isSavingItem, setIsSavingItem] = useState<boolean>(false);
 
@@ -354,6 +355,7 @@ export default function AdminPage() {
     setFormPhotoUrl('');
     setFormDescription('');
     setFormSectionId('supermarket');
+    setFormUnit('1 kg');
     setFormActive(true);
     setUploadError(null);
     setShowUrlFallback(false);
@@ -367,6 +369,7 @@ export default function AdminPage() {
     setFormPhotoUrl(item.photoUrl);
     setFormDescription(item.description || '');
     setFormSectionId(item.sectionId || 'supermarket');
+    setFormUnit(item.unit || '1 kg');
     setFormActive(item.active);
     setUploadError(null);
     setShowUrlFallback(false);
@@ -397,6 +400,7 @@ export default function AdminPage() {
         photoUrl: formPhotoUrl.trim(),
         description: formDescription.trim(),
         sectionId: formSectionId,
+        unit: formUnit.trim() || '1 piece',
         active: formActive,
       };
 
@@ -830,6 +834,11 @@ export default function AdminPage() {
                                   {DEFAULT_SECTIONS.find(s => s.id === item.sectionId)?.nameEn || item.sectionId}
                                 </span>
                               )}
+                              {item.unit && (
+                                <span className="text-[10px] text-[#A9C8EE] bg-[#123A66]/60 px-2 py-0.5 rounded-full border border-[#123A66]">
+                                  Scale: {item.unit}
+                                </span>
+                              )}
                               {!item.active && (
                                 <span className="text-[10px] text-gray-400 bg-gray-800 px-2 py-0.5 rounded-full">
                                   Inactive
@@ -849,6 +858,9 @@ export default function AdminPage() {
                             {hasBids ? (
                               <span className="text-lg font-medium text-white bg-[#B22026] px-2.5 py-0.5 rounded-md shadow-sm">
                                 ${item.lowestPrice?.toFixed(2)}
+                                {item.unit && (
+                                  <span className="text-xs font-normal opacity-90 ml-1">/ {item.unit}</span>
+                                )}
                               </span>
                             ) : (
                               <span className="text-xs text-gray-500 italic">No prices yet</span>
@@ -936,8 +948,11 @@ export default function AdminPage() {
                                           <span className="text-gray-400">#{idx + 1}</span>
                                         )}
                                       </td>
-                                      <td className="py-2 px-2 font-medium text-white">
+                                      <td className="py-2 px-2 font-medium text-white whitespace-nowrap">
                                         ${sub.price.toFixed(2)}
+                                        {item.unit && (
+                                          <span className="text-[10px] text-[#A9C8EE] font-normal ml-1">/ {item.unit}</span>
+                                        )}
                                       </td>
                                       <td className="py-2 px-2 text-white">{sub.userName}</td>
                                       <td className="py-2 px-2 text-[#A9C8EE]">{sub.userClass}</td>
@@ -1337,6 +1352,11 @@ export default function AdminPage() {
                             {DEFAULT_SECTIONS.find(s => s.id === item.sectionId)?.nameEn || item.sectionId}
                           </span>
                         )}
+                        {item.unit && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-[#123A66]/30 text-[#A9C8EE] border border-[#123A66]/60">
+                            Scale: {item.unit}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1667,6 +1687,42 @@ export default function AdminPage() {
                     ورقيات (Paper Products)
                   </option>
                 </select>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-medium text-gray-200">
+                    Pricing Scale / Unit (مقياس السعر) <span className="text-[#B22026]">*</span>
+                  </label>
+                  <span className="text-[10px] text-[#A9C8EE]/80">e.g. 1 kg, 1 bottle, 1 pack</span>
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={formUnit}
+                  onChange={(e) => setFormUnit(e.target.value)}
+                  placeholder="e.g. 1 kg, 1 bottle, 1 pack, 500g"
+                  className="w-full px-3.5 py-2.5 bg-[#123A66]/30 border border-[#123A66] focus:border-[#A9C8EE] rounded-[12px] text-white text-xs placeholder-gray-500 focus:outline-none"
+                />
+
+                {/* Quick Preset Chips */}
+                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                  <span className="text-[10px] text-gray-400">Quick suggestions:</span>
+                  {['1 kg', '1 bottle', '1 piece', '1 pack', '500g', '1 liter', '1 carton', '1 plate'].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setFormUnit(preset)}
+                      className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors ${
+                        formUnit === preset
+                          ? 'bg-[#B22026] text-white border-[#B22026]'
+                          : 'bg-[#123A66]/40 text-[#A9C8EE] border-[#123A66] hover:bg-[#123A66]'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Image Upload Section */}

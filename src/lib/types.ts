@@ -24,6 +24,7 @@ export interface Item {
   photoUrl: string;
   description?: string;
   sectionId?: string; // Links to Section.id
+  unit?: string; // e.g. "1 kg", "1 bottle", "1 pack", "1 piece"
   active?: boolean;
   orderIndex?: number;
   createdAt?: string;
@@ -65,6 +66,7 @@ export interface AdminItemSummary {
   photoUrl: string;
   description?: string;
   sectionId?: string;
+  unit?: string; // e.g. "1 kg", "1 bottle", "1 pack", "1 piece"
   active: boolean;
   lowestPrice: number | null;
   pricesCount: number;

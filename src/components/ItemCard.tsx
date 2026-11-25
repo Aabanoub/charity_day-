@@ -107,7 +107,10 @@ export default function ItemCard({
         {isAlreadySubmitted && (
           <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/85 backdrop-blur-md border border-green-500/40 text-xs text-green-400 font-medium">
             <Check className="w-3.5 h-3.5" />
-            <span>Priced: ${Number(userSubmission?.price).toFixed(2)}</span>
+            <span>
+              Priced: ${Number(userSubmission?.price).toFixed(2)}
+              {item.unit && <span className="opacity-90 ml-1">/ {item.unit}</span>}
+            </span>
           </div>
         )}
       </div>
@@ -115,9 +118,16 @@ export default function ItemCard({
       {/* Card Body */}
       <div className="p-4 sm:p-5 flex flex-col justify-between">
         <div>
-          <h3 className="text-lg font-medium text-white tracking-tight leading-snug">
-            {item.name}
-          </h3>
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-lg font-medium text-white tracking-tight leading-snug">
+              {item.name}
+            </h3>
+            {item.unit && (
+              <span className="shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#123A66]/70 border border-[#A9C8EE]/40 text-[#A9C8EE]">
+                {item.unit}
+              </span>
+            )}
+          </div>
 
           {item.description && (
             <p className="text-xs text-[#A9C8EE]/80 mt-1 line-clamp-2 leading-relaxed">
@@ -132,9 +142,11 @@ export default function ItemCard({
           <div>
             <div className="flex items-center justify-between text-xs mb-1">
               <label htmlFor={`price-${item.id}`} className="font-medium text-gray-200">
-                Price Found ($) <span className="text-[#B22026]">*</span>
+                Price Found {item.unit ? `(per ${item.unit})` : '($)'} <span className="text-[#B22026]">*</span>
               </label>
-              <span className="text-[11px] text-[#A9C8EE]/80">Lowest market price</span>
+              <span className="text-[11px] text-[#A9C8EE]/80">
+                {item.unit ? `Target: 1 ${item.unit.replace(/^1\s*/, '')}` : 'Lowest market price'}
+              </span>
             </div>
 
             <div className="relative">
@@ -152,7 +164,7 @@ export default function ItemCard({
                   setPriceInput(e.target.value);
                   if (errorMessage) setErrorMessage(null);
                 }}
-                placeholder="0.00"
+                placeholder={item.unit ? `e.g. 250 (for ${item.unit})` : '0.00'}
                 className="w-full pl-8 pr-4 py-2.5 min-h-[48px] bg-[#123A66]/30 border border-[#123A66] focus:border-[#A9C8EE] rounded-[12px] text-white font-medium text-lg placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#A9C8EE] transition-all duration-200"
               />
             </div>

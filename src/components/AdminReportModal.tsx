@@ -258,9 +258,25 @@ export default function AdminReportModal({
                       >
                         <td className="py-2.5 px-3 font-medium text-gray-900">
                           {idx + 1}. {item.name}
+                          {item.unit && (
+                            <span className="text-[10px] text-gray-500 font-normal ml-1">
+                              ({item.unit})
+                            </span>
+                          )}
                         </td>
                         <td className="py-2.5 px-3 text-right font-bold text-[#B22026] whitespace-nowrap">
-                          {item.lowest ? `$${item.lowest.price.toFixed(2)}` : '—'}
+                          {item.lowest ? (
+                            <>
+                              ${item.lowest.price.toFixed(2)}
+                              {item.unit && (
+                                <span className="text-[10px] text-gray-500 font-normal ml-0.5">
+                                  / {item.unit}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            '—'
+                          )}
                         </td>
                         <td className="py-2.5 px-3 font-medium text-gray-900 whitespace-nowrap">
                           {item.lowest ? item.lowest.userName : <span className="text-gray-400 italic">No prices</span>}
@@ -313,6 +329,11 @@ export default function AdminReportModal({
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-gray-900 text-sm">
                           #{idx + 1}. {item.name}
+                          {item.unit && (
+                            <span className="text-xs font-normal text-gray-500 ml-1">
+                              ({item.unit})
+                            </span>
+                          )}
                         </span>
                         <span className="text-[11px] font-medium text-[#123A66] bg-white px-2 py-0.5 rounded border border-gray-200">
                           {item.filteredSubs.length} price quote{item.filteredSubs.length === 1 ? '' : 's'}
@@ -321,7 +342,7 @@ export default function AdminReportModal({
 
                       {item.lowest ? (
                         <div className="text-xs bg-[#B22026]/10 text-[#B22026] border border-[#B22026]/30 px-2.5 py-1 rounded-md font-medium">
-                          Lowest Found: <strong>${item.lowest.price.toFixed(2)}</strong> by{' '}
+                          Lowest Found: <strong>${item.lowest.price.toFixed(2)}{item.unit ? ` / ${item.unit}` : ''}</strong> by{' '}
                           <span className="text-gray-900 font-semibold">{item.lowest.userName}</span>{' '}
                           <span className="text-gray-600 font-mono">({item.lowest.userPhone})</span>
                         </div>
@@ -383,6 +404,11 @@ export default function AdminReportModal({
                                     }
                                   >
                                     ${sub.price.toFixed(2)}
+                                    {item.unit && (
+                                      <span className="text-[10px] text-gray-500 font-normal ml-0.5">
+                                        / {item.unit}
+                                      </span>
+                                    )}
                                   </span>
                                 </td>
 
