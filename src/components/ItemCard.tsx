@@ -77,15 +77,23 @@ export default function ItemCard({
       <div className="relative w-full h-52 sm:h-60 bg-[#061220] overflow-hidden">
         {/* Skeleton while image loads */}
         {!imageLoaded && (
-          <div className="absolute inset-0 animate-shimmer bg-[#123A66]/30 flex items-center justify-center text-[#A9C8EE]/40 text-xs">
-            Loading photo...
+          <div className="absolute inset-0 animate-pulse bg-[#123A66]/30 flex items-center justify-center text-[#A9C8EE]/60 text-xs">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#A9C8EE] animate-ping" />
+              Loading photo...
+            </span>
           </div>
         )}
         
         <img
-          src={item.photoUrl}
+          ref={(img) => {
+            if (img && img.complete && !imageLoaded) {
+              setImageLoaded(true);
+            }
+          }}
+          src={item.photoUrl || 'https://images.unsplash.com/photo-1532619675605-1ede6c2ed2b0?w=600&auto=format&fit=crop&q=80'}
           alt={item.name}
-          loading="lazy"
+          loading="eager"
           onLoad={() => setImageLoaded(true)}
           onError={(e) => {
             // Fallback placeholder on image load failure
@@ -93,7 +101,7 @@ export default function ItemCard({
               'https://images.unsplash.com/photo-1532619675605-1ede6c2ed2b0?w=600&auto=format&fit=crop&q=80';
             setImageLoaded(true);
           }}
-          className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${
+          className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
         />

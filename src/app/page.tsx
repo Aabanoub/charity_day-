@@ -17,7 +17,12 @@ import { Heart, Sparkles, AlertCircle, RefreshCw, ArrowLeft, Layers } from 'luci
 function SkeletonCard() {
   return (
     <div className="bg-[#0b1d33] border border-[#123A66] rounded-[16px] p-4 space-y-4">
-      <div className="w-full aspect-video rounded-[12px] bg-[#123A66]/30 animate-pulse" />
+      <div className="w-full aspect-video rounded-[12px] bg-[#123A66]/30 animate-pulse flex items-center justify-center text-xs text-[#A9C8EE]/50 font-medium">
+        <span className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#A9C8EE] animate-ping" />
+          Loading item...
+        </span>
+      </div>
       <div className="h-5 bg-[#123A66]/40 rounded w-3/4 animate-pulse" />
       <div className="h-4 bg-[#123A66]/30 rounded w-1/2 animate-pulse" />
       <div className="h-10 bg-[#123A66]/20 rounded-lg animate-pulse" />
