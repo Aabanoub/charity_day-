@@ -74,12 +74,12 @@ export default function ItemCard({
   return (
     <div className="group relative bg-[#0b1d33]/90 hover:bg-[#0e2440] border border-[#123A66] hover:border-[#A9C8EE]/30 rounded-[16px] overflow-hidden transition-all duration-200">
       {/* Top Photo Section */}
-      <div className="relative w-full h-52 sm:h-60 bg-[#061220] overflow-hidden">
+      <div className="relative w-full h-56 sm:h-64 bg-white rounded-t-[16px] overflow-hidden flex items-center justify-center p-3.5 border-b border-[#123A66]/50">
         {/* Skeleton while image loads */}
         {!imageLoaded && (
-          <div className="absolute inset-0 animate-pulse bg-[#123A66]/30 flex items-center justify-center text-[#A9C8EE]/60 text-xs">
+          <div className="absolute inset-0 animate-pulse bg-slate-100 flex items-center justify-center text-slate-400 text-xs font-medium z-0">
             <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#A9C8EE] animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-slate-400 animate-ping" />
               Loading photo...
             </span>
           </div>
@@ -101,18 +101,18 @@ export default function ItemCard({
               'https://images.unsplash.com/photo-1532619675605-1ede6c2ed2b0?w=600&auto=format&fit=crop&q=80';
             setImageLoaded(true);
           }}
-          className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
+          className={`w-full h-full object-contain transition-all duration-300 group-hover:scale-105 z-[1] ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
         />
 
         {/* Item Index Pill */}
-        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-[#123A66] text-[11px] font-medium text-[#A9C8EE]">
+        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[#0b1d33]/90 backdrop-blur-md border border-[#123A66] text-[11px] font-semibold text-[#A9C8EE] shadow-sm z-10">
           Item #{index + 1}
         </div>
 
         {/* Floating Target Badge on Image */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/90 backdrop-blur-md border-2 border-[#B22026] text-white shadow-[0_4px_14px_rgba(0,0,0,0.6)]">
+        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0b1d33]/95 backdrop-blur-md border-2 border-[#B22026] text-white shadow-[0_4px_14px_rgba(0,0,0,0.5)] z-10">
           <Scale className="w-3.5 h-3.5 text-[#ff7d82]" />
           <span className="text-[10px] uppercase font-bold tracking-wider text-[#A9C8EE]">Target:</span>
           <span className="text-white text-xs font-extrabold tracking-wide">{item.unit || '1 unit'}</span>
@@ -120,7 +120,7 @@ export default function ItemCard({
 
         {/* Saved indicator badge on image */}
         {isAlreadySubmitted && (
-          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/85 backdrop-blur-md border border-green-500/40 text-xs text-green-400 font-medium">
+          <div className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0b1d33]/90 backdrop-blur-md border border-green-500/50 text-xs text-green-400 font-semibold shadow-sm z-10">
             <Check className="w-3.5 h-3.5" />
             <span>
               Priced: ${Number(userSubmission?.price).toFixed(2)}
