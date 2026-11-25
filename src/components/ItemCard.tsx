@@ -103,10 +103,10 @@ export default function ItemCard({
           Item #{index + 1}
         </div>
 
-        {/* Floating Pricing Scale Badge on Image */}
+        {/* Floating Target Badge on Image */}
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/90 backdrop-blur-md border-2 border-[#B22026] text-white shadow-[0_4px_14px_rgba(0,0,0,0.6)]">
           <Scale className="w-3.5 h-3.5 text-[#ff7d82]" />
-          <span className="text-[10px] uppercase font-bold tracking-wider text-[#A9C8EE]">Scale:</span>
+          <span className="text-[10px] uppercase font-bold tracking-wider text-[#A9C8EE]">Target:</span>
           <span className="text-white text-xs font-extrabold tracking-wide">{item.unit || '1 unit'}</span>
         </div>
 
@@ -131,11 +131,11 @@ export default function ItemCard({
                 {item.name}
               </h3>
 
-              {/* Eye-catching, prominent Pricing Scale Badge beside item */}
+              {/* Eye-catching, prominent Target Badge beside item */}
               <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-[#B22026]/40 via-[#123A66]/60 to-[#123A66] border-2 border-[#B22026] text-white shadow-[0_0_14px_rgba(178,32,38,0.45)] backdrop-blur-sm">
                 <Scale className="w-3.5 h-3.5 text-[#ff8085] shrink-0 animate-pulse" />
                 <span className="text-[10px] uppercase font-bold tracking-wider text-[#A9C8EE]">
-                  Scale:
+                  Target:
                 </span>
                 <span className="text-white font-extrabold text-xs tracking-wide">
                   {item.unit || '1 unit'}
@@ -159,7 +159,7 @@ export default function ItemCard({
               <label htmlFor={`price-${item.id}`} className="font-semibold text-white flex items-center gap-1.5">
                 <span>Price Found</span>
                 <span className="px-2 py-0.5 rounded-full bg-[#B22026]/20 border border-[#B22026]/60 text-[#ff8e93] text-[11px] font-bold">
-                  per {item.unit || '1 unit'}
+                  Target: {item.unit || '1 unit'}
                 </span>
                 <span className="text-[#B22026]">*</span>
               </label>
@@ -181,13 +181,13 @@ export default function ItemCard({
                   setPriceInput(e.target.value);
                   if (errorMessage) setErrorMessage(null);
                 }}
-                placeholder={item.unit ? `e.g. 250 (price for ${item.unit})` : '0.00'}
+                placeholder={item.unit ? `e.g. 250 (Target: ${item.unit})` : '0.00'}
                 className="w-full pl-8 pr-28 py-2.5 min-h-[48px] bg-[#123A66]/30 border border-[#123A66] focus:border-[#A9C8EE] rounded-[12px] text-white font-bold text-lg placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#A9C8EE] transition-all duration-200"
               />
               <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
                 <span className="px-2.5 py-1 rounded-[8px] bg-[#B22026]/30 border border-[#B22026]/70 text-white font-bold text-xs flex items-center gap-1 shadow-sm">
                   <Scale className="w-3 h-3 text-[#ff8085]" />
-                  <span>/ {item.unit || '1 unit'}</span>
+                  <span>for {item.unit || '1 unit'}</span>
                 </span>
               </div>
             </div>

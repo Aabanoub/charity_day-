@@ -836,7 +836,7 @@ export default function AdminPage() {
                               )}
                               {item.unit && (
                                 <span className="text-[10px] text-[#A9C8EE] bg-[#123A66]/60 px-2 py-0.5 rounded-full border border-[#123A66]">
-                                  Scale: {item.unit}
+                                  Target: {item.unit}
                                 </span>
                               )}
                               {!item.active && (
@@ -1354,7 +1354,7 @@ export default function AdminPage() {
                         )}
                         {item.unit && (
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-[#123A66]/30 text-[#A9C8EE] border border-[#123A66]/60">
-                            Scale: {item.unit}
+                            Target: {item.unit}
                           </span>
                         )}
                       </div>
@@ -1692,7 +1692,7 @@ export default function AdminPage() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-medium text-gray-200">
-                    Pricing Scale / Unit (مقياس السعر) <span className="text-[#B22026]">*</span>
+                    Target / Pricing Scale (التارجت / مقياس السعر) <span className="text-[#B22026]">*</span>
                   </label>
                   <span className="text-[10px] text-[#A9C8EE]/80">e.g. 1 kg, 1 bottle, 1 pack</span>
                 </div>
